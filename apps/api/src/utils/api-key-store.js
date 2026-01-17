@@ -1,4 +1,4 @@
-const { getRedis } = require("../config");
+const { Redis } = require("../config");
 // 延迟加载 Logger 避免循环依赖
 const getLogger = () => {
   try {
@@ -33,7 +33,7 @@ class ApiKeyStore {
   async init() {
     const Logger = getLogger();
     try {
-      this.redis = getRedis();
+      this.redis = Redis.getRedis();
       if (this.redis) {
         // 测试连接是否可用
         try {
