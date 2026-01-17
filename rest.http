@@ -1,1 +1,62 @@
-GET http://localhost:5000/
+### 健康检查
+GET http://localhost:5000/api/v1/info
+
+### 获取API Key（不需要鉴权）
+POST http://localhost:5000/api/v1/auth/api-key
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "your_password"
+}
+
+### 获取API Key后的响应示例
+# {
+#   "success": true,
+#   "data": {
+#     "access_key": "returned_access_key",
+#     "secret_key": "returned_secret_key",
+#     "message": "API key已生成，请使用access_key作为Bearer token进行鉴权"
+#   }
+# }
+
+### Creatomate API转发 - 获取renders列表
+GET http://localhost:5000/api/v1/proxy/creatomate/renders
+Authorization: Bearer YOUR_API_KEY
+
+### Creatomate API转发 - 创建render
+POST http://localhost:5000/api/v1/proxy/creatomate/renders
+Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+
+{
+  "template_id": "your-template-id",
+  "modifications": {
+    "Text": "Hello World"
+  }
+}
+
+### 通用API转发示例（动态API名称）
+GET http://localhost:5000/api/v1/proxy/creatomate/renders
+Authorization: Bearer YOUR_API_KEY
+
+### Creatomate API转发 - 创建视频渲染（完整示例）
+POST http://localhost:5000/api/v1/proxy/creatomate/renders
+Authorization: Bearer 52181a0602234279b50469837027e68c06a2922dfc920a4a888288acf1c5c7aed9aa22d212b8f3efa7542fdc8ab79e9e
+Content-Type: application/json
+
+{
+  "output_format": "mp4",
+  "width": 1280,
+  "height": 720,
+  "duration": 3,
+  "elements": [
+    {
+      "type": "text",
+      "text": "My first video generated with RenderScript!",
+      "fill_color": "#ff0000",
+      "width": "50%",
+      "height": "25%"
+    }
+  ]
+}

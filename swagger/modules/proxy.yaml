@@ -1,0 +1,476 @@
+paths:
+  /proxy/creatomate/{path}:
+    get:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - GET请求
+      description: |
+        将GET请求转发到Creatomate API。
+        需要先通过 `/auth/api-key` 接口获取API Key，然后在请求头中使用 `Authorization: Bearer {access_key}` 进行鉴权。
+      operationId: proxyCreatomateGet
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Creatomate API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: renders
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            example: 1
+        - name: limit
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: Creatomate API返回的原始数据
+              example:
+                success: true
+                data:
+                  id: render-123
+                  status: pending
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 无效的API key
+                error: {}
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - POST请求
+      description: |
+        将POST请求转发到Creatomate API。
+        需要先通过 `/auth/api-key` 接口获取API Key，然后在请求头中使用 `Authorization: Bearer {access_key}` 进行鉴权。
+      operationId: proxyCreatomatePost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Creatomate API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: renders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 请求体将直接转发到Creatomate API
+            example:
+              output_format: mp4
+              width: 1280
+              height: 720
+              duration: 3
+              elements:
+                - type: text
+                  text: My first video generated with RenderScript!
+                  fill_color: "#ff0000"
+                  width: "50%"
+                  height: "25%"
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: Creatomate API返回的原始数据
+        '201':
+          description: 资源创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - PUT请求
+      description: 将PUT请求转发到Creatomate API
+      operationId: proxyCreatomatePut
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+    
+    patch:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - PATCH请求
+      description: 将PATCH请求转发到Creatomate API
+      operationId: proxyCreatomatePatch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+    
+    delete:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - DELETE请求
+      description: 将DELETE请求转发到Creatomate API
+      operationId: proxyCreatomateDelete
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /proxy/{apiName}/{path}:
+    get:
+      tags:
+        - Proxy
+      summary: 通用API代理 - GET请求
+      description: |
+        将GET请求转发到配置的外部API。
+        需要先在环境变量中配置 `API_{API_NAME}_BASE_URL` 和 `API_{API_NAME}_VERSION`。
+        需要先通过 `/auth/api-key` 接口获取API Key，然后在请求头中使用 `Authorization: Bearer {access_key}` 进行鉴权。
+      operationId: proxyGenericGet
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          description: API名称（对应环境变量中的配置名称，不区分大小写）
+          schema:
+            type: string
+          example: creatomate
+        - name: path
+          in: path
+          required: true
+          description: API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: renders/123
+        - name: page
+          in: query
+          description: 查询参数示例
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: 外部API返回的原始数据
+        '400':
+          description: API配置不存在或请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: API配置不存在: nonexistent
+                error: {}
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Proxy
+      summary: 通用API代理 - POST请求
+      description: |
+        将POST请求转发到配置的外部API。
+        需要先在环境变量中配置 `API_{API_NAME}_BASE_URL` 和 `API_{API_NAME}_VERSION`。
+        需要先通过 `/auth/api-key` 接口获取API Key，然后在请求头中使用 `Authorization: Bearer {access_key}` 进行鉴权。
+      operationId: proxyGenericPost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+          example: creatomate
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          example: renders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 请求体将直接转发到外部API
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '201':
+          description: 资源创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: API配置不存在或请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - Proxy
+      summary: 通用API代理 - PUT请求
+      description: 将PUT请求转发到配置的外部API
+      operationId: proxyGenericPut
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+    
+    patch:
+      tags:
+        - Proxy
+      summary: 通用API代理 - PATCH请求
+      description: 将PATCH请求转发到配置的外部API
+      operationId: proxyGenericPatch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+    
+    delete:
+      tags:
+        - Proxy
+      summary: 通用API代理 - DELETE请求
+      description: 将DELETE请求转发到配置的外部API
+      operationId: proxyGenericDelete
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error:
+          type: object

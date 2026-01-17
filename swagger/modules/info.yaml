@@ -1,0 +1,34 @@
+paths:
+  /info:
+    get:
+      tags:
+        - Info
+      summary: 健康检查
+      description: 检查API服务是否正常运行
+      operationId: getInfo
+      security: []
+      responses:
+        '200':
+          description: 服务正常运行
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: API is live
+                  error:
+                    type: object
+                    example: {}
+                  data:
+                    type: object
+                    example: {}
+              example:
+                success: true
+                message: API is live
+                error: {}
+                data: {}

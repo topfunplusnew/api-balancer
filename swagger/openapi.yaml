@@ -1,0 +1,1078 @@
+openapi: 3.0.3
+info:
+  title: Express Starter API
+  description: |
+    Express Starter API 文档
+    
+    本API提供以下功能：
+    - 健康检查
+    - 用户鉴权和API Key管理
+    - 持久化APIKEY管理
+    - 第三方API代理服务
+    
+    ## 鉴权方式
+    
+    本API支持两种鉴权方式：
+    
+    1. **Bearer Token（临时Token）**
+       - 通过 `/api/v1/auth/api-key` 或 `/auth/api-key` 接口获取
+       - 存储在内存中，服务重启后失效
+       - 使用方式：`Authorization: Bearer {access_key}`
+    
+    2. **APIKEY（持久化Key）**
+       - 通过 `/api/v1/api-keys` 或 `/api-keys` 接口创建
+       - 存储在数据库中，服务重启后仍然有效
+       - 支持过期时间设置和启用/禁用
+       - 使用方式：
+         - 请求头：`X-API-Key: {api_key}`
+         - 查询参数：`?api_key={api_key}`
+    
+    鉴权优先级：优先使用Bearer Token，如果没有或无效，则使用APIKEY。
+    
+    **注意**：所有接口都支持两种路径格式：
+    - 完整路径：`/api/v1/{path}` （推荐）
+    - 便捷路径：`/{path}` （兼容旧版本）
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: 本地开发环境
+  - url: https://api.example.com/api/v1
+    description: 生产环境
+
+tags:
+  - name: Info
+    description: 系统信息相关接口
+  - name: Auth
+    description: 鉴权相关接口
+  - name: ApiKeys
+    description: APIKEY管理接口（需要鉴权）
+  - name: Proxy
+    description: API代理服务
+
+paths:
+  /info:
+    get:
+      tags:
+        - Info
+      summary: 健康检查
+      description: 检查API服务是否正常运行
+      operationId: getInfo
+      security: []
+      responses:
+        '200':
+          description: 服务正常运行
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: API is live
+                  error:
+                    type: object
+                    example: {}
+                  data:
+                    type: object
+                    example: {}
+              example:
+                success: true
+                message: API is live
+                error: {}
+                data: {}
+  
+  /auth/api-key:
+    post:
+      tags:
+        - Auth
+      summary: 获取临时API Key（Bearer Token）
+      description: |
+        通过提供用户名和密码进行用户鉴权，验证成功后生成临时API Key（Bearer Token）。
+        获取到的access_key将用于后续API请求的鉴权。
+        
+        **注意**：此接口生成的是临时Token，存储在内存中，服务重启后会失效。
+        如需持久化的APIKEY，请使用 `/api-keys` 接口创建。
+      operationId: getApiKey
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: 用户名
+                  example: admin
+                password:
+                  type: string
+                  description: 密码
+                  format: password
+                  example: your_password
+            examples:
+              basic:
+                summary: 基本请求
+                value:
+                  username: admin
+                  password: your_password
+      responses:
+        '200':
+          description: API Key获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      access_key:
+                        type: string
+                        description: 访问密钥，用于后续API请求的Bearer token
+                        example: admin_1234567890_abcdef1234567890
+                      message:
+                        type: string
+                        example: API key已生成，请使用access_key作为Bearer token进行鉴权
+              example:
+                success: true
+                data:
+                  access_key: admin_1234567890_abcdef1234567890
+                  message: API key已生成，请使用access_key作为Bearer token进行鉴权
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                default:
+                  value:
+                    success: false
+                    message: "缺少必填字段: username 和 password"
+                    error: {}
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                default:
+                  value:
+                    success: false
+                    message: "用户名或密码错误"
+                    error: {}
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                default:
+                  value:
+                    success: false
+                    message: "获取API key失败"
+                    error: {}
+  
+  /api-keys:
+    post:
+      tags:
+        - ApiKeys
+      summary: 创建持久化APIKEY
+      description: |
+        创建持久化的APIKEY，存储在数据库中，服务重启后仍然有效。
+        需要先通过 `/api/v1/auth/api-key` 或 `/auth/api-key` 接口获取临时Token，然后使用Bearer Token进行鉴权。
+        
+        **重要**：APIKEY创建后只会在响应中显示一次，请妥善保管。
+        
+        **路径说明**：
+        - 完整路径：`POST /api/v1/api-keys`
+        - 便捷路径：`POST /api-keys`
+      operationId: createApiKey
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: APIKEY名称（可选）
+                  example: My Production API Key
+                expires_at:
+                  type: string
+                  format: date-time
+                  description: 过期时间（可选，ISO 8601格式）
+                  example: "2026-12-31T23:59:59Z"
+            examples:
+              basic:
+                summary: 基本请求（使用默认名称）
+                value: {}
+              withName:
+                summary: 指定名称
+                value:
+                  name: Production API Key
+              withExpiry:
+                summary: 指定过期时间
+                value:
+                  name: Temporary API Key
+                  expires_at: "2026-12-31T23:59:59Z"
+      responses:
+        '201':
+          description: APIKEY创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: APIKEY ID
+                      api_key:
+                        type: string
+                        description: 生成的APIKEY（只显示一次）
+                        example: sk_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+                      name:
+                        type: string
+                        description: APIKEY名称
+                      created_at:
+                        type: string
+                        format: date-time
+                        description: 创建时间
+                      expires_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        description: 过期时间
+                      message:
+                        type: string
+                        example: APIKEY 已生成，请妥善保管，此密钥只会显示一次
+              example:
+                success: true
+                data:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  api_key: "sk_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                  name: "My Production API Key"
+                  created_at: "2026-01-17T12:00:00Z"
+                  expires_at: null
+                  message: "APIKEY 已生成，请妥善保管，此密钥只会显示一次"
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    get:
+      tags:
+        - ApiKeys
+      summary: 获取当前用户的APIKEY列表
+      description: |
+        获取当前已登录用户的所有APIKEY列表。
+        APIKEY会部分隐藏，只显示前8位和后4位。
+      operationId: listApiKeys
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: APIKEY ID
+                        api_key:
+                          type: string
+                          description: 部分隐藏的APIKEY
+                          example: sk_1234...abcd
+                        name:
+                          type: string
+                          description: APIKEY名称
+                        is_active:
+                          type: boolean
+                          description: 是否激活
+                        last_used_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: 最后使用时间
+                        expires_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: 过期时间
+                        created_at:
+                          type: string
+                          format: date-time
+                          description: 创建时间
+              example:
+                success: true
+                data:
+                  - id: "123e4567-e89b-12d3-a456-426614174000"
+                    api_key: "sk_1234...abcd"
+                    name: "My Production API Key"
+                    is_active: true
+                    last_used_at: "2026-01-17T12:30:00Z"
+                    expires_at: null
+                    created_at: "2026-01-17T12:00:00Z"
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api-keys/{id}:
+    delete:
+      tags:
+        - ApiKeys
+      summary: 删除APIKEY
+      description: 删除指定的APIKEY，删除后该APIKEY将无法再使用。
+      operationId: deleteApiKey
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: APIKEY ID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "APIKEY 已删除"
+              example:
+                success: true
+                message: "APIKEY 已删除"
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: APIKEY不存在或无权删除
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api-keys/{id}/toggle:
+    patch:
+      tags:
+        - ApiKeys
+      summary: 启用/禁用APIKEY
+      description: 启用或禁用指定的APIKEY，禁用后的APIKEY将无法用于鉴权。
+      operationId: toggleApiKey
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: APIKEY ID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - is_active
+              properties:
+                is_active:
+                  type: boolean
+                  description: 是否激活
+                  example: false
+            examples:
+              disable:
+                summary: 禁用APIKEY
+                value:
+                  is_active: false
+              enable:
+                summary: 启用APIKEY
+                value:
+                  is_active: true
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "APIKEY 已禁用"
+              example:
+                success: true
+                message: "APIKEY 已禁用"
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                default:
+                  value:
+                    success: false
+                    message: "is_active 必须是布尔值"
+                    error: {}
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: APIKEY不存在或无权操作
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /proxy/creatomate/{path}:
+    get:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - GET请求
+      description: |
+        将GET请求转发到Creatomate API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyCreatomateGet
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Creatomate API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: renders
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            example: 1
+        - name: limit
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - POST请求
+      description: |
+        将POST请求转发到Creatomate API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyCreatomatePost
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Creatomate API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: renders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 请求体将直接转发到Creatomate API
+            example:
+              output_format: mp4
+              width: 1280
+              height: 720
+              duration: 3
+              elements:
+                - type: text
+                  text: My first video generated with RenderScript!
+                  fill_color: "#ff0000"
+                  width: "50%"
+                  height: "25%"
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '201':
+          description: 资源创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - PUT请求
+      description: |
+        将PUT请求转发到Creatomate API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyCreatomatePut
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    patch:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - PATCH请求
+      description: |
+        将PATCH请求转发到Creatomate API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyCreatomatePatch
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - Proxy
+      summary: Creatomate API代理 - DELETE请求
+      description: |
+        将DELETE请求转发到Creatomate API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyCreatomateDelete
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /proxy/{apiName}/{path}:
+    get:
+      tags:
+        - Proxy
+      summary: 通用API代理 - GET请求
+      description: |
+        将GET请求转发到配置的外部API。
+        需要先在环境变量中配置 `API_{API_NAME}_BASE_URL` 和 `API_{API_NAME}_VERSION`。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyGenericGet
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          description: API名称（对应环境变量中的配置名称，不区分大小写）
+          schema:
+            type: string
+          example: creatomate
+        - name: path
+          in: path
+          required: true
+          description: API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: renders/123
+        - name: page
+          in: query
+          description: 查询参数示例
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: API配置不存在或请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                default:
+                  value:
+                    success: false
+                    message: "API配置不存在: nonexistent"
+                    error: {}
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Proxy
+      summary: 通用API代理 - POST请求
+      description: |
+        将POST请求转发到配置的外部API。
+        需要先在环境变量中配置 `API_{API_NAME}_BASE_URL` 和 `API_{API_NAME}_VERSION`。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyGenericPost
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+          example: creatomate
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          example: renders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 请求体将直接转发到外部API
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '201':
+          description: 资源创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: API配置不存在或请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - Proxy
+      summary: 通用API代理 - PUT请求
+      description: |
+        将PUT请求转发到配置的外部API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyGenericPut
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    patch:
+      tags:
+        - Proxy
+      summary: 通用API代理 - PATCH请求
+      description: |
+        将PATCH请求转发到配置的外部API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyGenericPatch
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - Proxy
+      summary: 通用API代理 - DELETE请求
+      description: |
+        将DELETE请求转发到配置的外部API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyGenericDelete
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: |
+        临时Bearer Token鉴权方式。
+        通过 `/auth/api-key` 接口获取的access_key作为Bearer token。
+        格式：`Authorization: Bearer {access_key}`
+        注意：此Token存储在内存中，服务重启后会失效。
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        持久化APIKEY鉴权方式。
+        通过 `/api-keys` 接口创建的持久化APIKEY。
+        支持两种方式：
+        1. 请求头：`X-API-Key: {api_key}`
+        2. 查询参数：`?api_key={api_key}`
+        注意：APIKEY存储在数据库中，服务重启后仍然有效。
+  
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: API返回的数据
+        message:
+          type: string
+          description: 响应消息
+    
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: 错误消息
+        error:
+          type: object
+          description: 错误详情
+
+security:
+  - BearerAuth: []

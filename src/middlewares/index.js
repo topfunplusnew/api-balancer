@@ -1,1 +1,3 @@
-module.exports = {};
+module.exports = {
+  authMiddleware: require("./auth-middleware"),
+};

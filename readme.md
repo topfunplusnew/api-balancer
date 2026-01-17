@@ -12,6 +12,15 @@
 - **No bloat.** Only the bare minimum dependencies to get you started.
 - **No black box.** Understand every line of code and customize it to your needs.
 - **No legacy.** Uses the latest version of Express and Node.js.
+- **API Proxy Service.** Built-in proxy service for forwarding requests to third-party APIs.
+
+## Documentation
+
+- [API文档 (Swagger UI)](http://localhost:5000/api-docs) - 交互式API文档（启动服务器后访问）
+- [第三方API代理服务使用指南](./docs/API_PROXY_GUIDE.md) - 如何添加和配置第三方API代理服务
+- [API鉴权系统使用指南](./docs/AUTH_GUIDE.md) - 如何使用API Key进行统一鉴权
+- [Supabase数据库集成指南](./docs/SUPABASE_SETUP.md) - Supabase数据库配置和使用说明
+- [OpenAPI文档说明](./swagger/README.md) - Swagger/OpenAPI文档结构说明
 
 ## Getting Started
 
