@@ -1,4 +1,11 @@
 let Redis = null;
+
+try {
+  // eslint-disable-next-line global-require
+  Redis = require("ioredis");
+} catch (error) {
+  Redis = null;
+}
 let redis = null;
 
 // 延迟加载 Logger 避免循环依赖
