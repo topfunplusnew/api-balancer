@@ -5,7 +5,7 @@
 ## 文件结构
 
 ```
-swagger/
+apps/api/swagger/
 ├── openapi.yaml          # 主OpenAPI文档（包含所有接口定义）
 ├── modules/              # 模块化文档（可选，用于组织大型API）
 │   ├── info.yaml         # 系统信息模块
@@ -70,7 +70,7 @@ http://localhost:5000/api-docs
 
 ### 添加新接口
 
-1. 编辑 `swagger/openapi.yaml`
+1. 编辑 `apps/api/swagger/openapi.yaml`
 2. 在 `paths` 部分添加新的路径定义
 3. 添加相应的tag（如果不存在）
 4. 重启服务器查看更新
@@ -103,5 +103,5 @@ http://localhost:5000/api-docs
 
 ## 相关文档
 
-- [API代理服务使用指南](../docs/API_PROXY_GUIDE.md)
-- [API鉴权系统使用指南](../docs/AUTH_GUIDE.md)
+- [API代理服务使用指南](../../docs/API_PROXY_GUIDE.md)
+- [API鉴权系统使用指南](../../docs/AUTH_GUIDE.md)

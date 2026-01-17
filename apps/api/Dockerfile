@@ -19,4 +19,4 @@ COPY . .
 EXPOSE 5000
 
 # 启动应用
-CMD ["node", "src/index.js"]
+CMD ["node", "apps/api/src/index.js"]

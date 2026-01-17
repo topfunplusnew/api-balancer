@@ -29,7 +29,7 @@ async function initUser() {
       if (error.message?.includes("Supabase")) {
         console.error(`\n请检查:`);
         console.error(`  1. 环境变量 SUPABASE_URL 和 SUPABASE_ANON_KEY 是否已设置`);
-        console.error(`  2. Supabase数据库表是否已创建（运行 migrations/001_create_users_table.sql）`);
+        console.error(`  2. Supabase数据库表是否已创建（运行 apps/api/migrations/001_create_users_table.sql）`);
       }
       process.exit(1);
     }

@@ -1,0 +1,41 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "api",
+  "projectType": "application",
+  "sourceRoot": "apps/api/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "main": "apps/api/src/index.js",
+        "tsConfig": "apps/api/tsconfig.json",
+        "outputPath": "dist/apps/api",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/api/swagger",
+            "output": "swagger"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/api/migrations",
+            "output": "migrations"
+          }
+        ]
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "api:build"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "apps/api/jest.config.js"
+      }
+    }
+  }
+}

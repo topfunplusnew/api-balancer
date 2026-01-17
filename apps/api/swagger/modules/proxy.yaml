@@ -23,13 +23,13 @@ paths:
           description: 页码
           schema:
             type: integer
-            example: 1
+          example: 1
         - name: limit
           in: query
           description: 每页数量
           schema:
             type: integer
-            example: 10
+          example: 10
       responses:
         '200':
           description: 请求成功

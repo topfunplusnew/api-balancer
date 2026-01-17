@@ -1,4 +1,12 @@
 node_modules/
 .env
 combined.log
-src/config/config.json
+apps/api/src/config/config.json
+
+
+.nx/cache
+.nx/workspace-data
+
+# Next.js
+.next
+out
