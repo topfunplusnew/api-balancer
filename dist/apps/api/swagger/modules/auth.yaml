@@ -1,0 +1,139 @@
+paths:
+  /auth/api-key:
+    post:
+      tags:
+        - Auth
+      summary: 获取API Key
+      description: |
+        通过提供用户名和密码进行用户鉴权，验证成功后生成API Key。
+        获取到的access_key将用于后续API请求的鉴权。
+      operationId: getApiKey
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: 用户名
+                  example: admin
+                password:
+                  type: string
+                  description: 密码
+                  format: password
+                  example: your_password
+            examples:
+              basic:
+                summary: 基本请求
+                value:
+                  username: admin
+                  password: your_password
+      responses:
+        '200':
+          description: API Key获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      access_key:
+                        type: string
+                        description: 访问密钥，用于后续API请求的Bearer token
+                        example: admin_1234567890_abcdef1234567890
+                      message:
+                        type: string
+                        example: API key已生成，请使用access_key作为Bearer token进行鉴权
+              example:
+                success: true
+                data:
+                  access_key: admin_1234567890_abcdef1234567890
+                  message: API key已生成，请使用access_key作为Bearer token进行鉴权
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 缺少必填字段: secret_key 和 order_token
+                  error:
+                    type: object
+                    example: {}
+              example:
+                success: false
+                message: 缺少必填字段: secret_key 和 order_token
+                error: {}
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Invalid credentials
+                  error:
+                    type: object
+              example:
+                success: false
+                message: Invalid credentials
+                error: {}
+        '502':
+          description: 鉴权服务不可用或返回错误
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 无法连接到鉴权服务
+                  error:
+                    type: object
+              example:
+                success: false
+                message: 无法连接到鉴权服务
+                error: {}
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 获取API key失败
+                  error:
+                    type: object
+              example:
+                success: false
+                message: 获取API key失败
+                error: {}
