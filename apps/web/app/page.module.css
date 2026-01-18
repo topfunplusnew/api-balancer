@@ -1,7 +1,7 @@
 .dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  background: var(--bg);
+  padding: 28px 20px 40px;
 }
 
 .container {
@@ -9,144 +9,248 @@
   margin: 0 auto;
 }
 
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 108px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .header {
   text-align: center;
-  color: white;
   margin-bottom: 40px;
 }
 
 .title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 2rem;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 #000;
 }
 
 .subtitle {
-  font-size: 1.1rem;
-  opacity: 0.9;
-  font-weight: 300;
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 
-.statsGrid {
+.menuList {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
+  gap: 12px;
 }
 
-.statCard {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.statCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-}
-
-.statTitle {
-  font-size: 0.875rem;
-  color: #666;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.statValue {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #333;
-}
-
-.statChange {
-  font-size: 0.875rem;
-  margin-top: 4px;
-}
-
-.positive {
-  color: #10b981;
-}
-
-.negative {
-  color: #ef4444;
-}
-
-.actionsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.actionCard {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.actionTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 12px;
-}
-
-.actionDescription {
-  color: #666;
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-
-.button {
-  display: inline-block;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.2s ease;
+.menuButton {
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+  text-align: left;
   cursor: pointer;
-  border: none;
-  font-size: 0.875rem;
+  text-transform: uppercase;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.primary {
-  background: #667eea;
-  color: white;
+.menuButton:hover {
+  transform: translate(-2px, -2px);
+  border-color: var(--accent);
 }
 
-.primary:hover {
-  background: #5a67d8;
+.menuActive {
+  border-color: var(--accent);
+  color: #031006;
+  background: var(--accent);
 }
 
-.secondary {
-  background: #e5e7eb;
-  color: #374151;
+.content {
+  min-height: 520px;
 }
 
-.secondary:hover {
-  background: #d1d5db;
+.supabasePanel {
+  display: grid;
+  gap: 16px;
+}
+
+.panelHeader {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.panelTitle {
+  font-size: 1rem;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.panelMeta {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.panelControls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px;
+  gap: 12px;
+}
+
+.input {
+  padding: 12px;
+  border: 2px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+  font-family: inherit;
+  box-shadow: var(--shadow);
+}
+
+.actionButton {
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: #031006;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tableWrap {
+  display: grid;
+  gap: 12px;
+}
+
+.tableMeta {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.table {
+  border: 2px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 180px 160px 160px 160px 100px 80px 1fr 1fr;
+  border-bottom: 2px solid var(--border);
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableHead {
+  padding: 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  border-right: 2px solid var(--border);
+  background: #0b1711;
+}
+
+.tableCell {
+  padding: 10px;
+  font-size: 0.75rem;
+  border-right: 2px solid var(--border);
+  color: var(--text);
+  word-break: break-all;
+}
+
+.tableHead:last-child,
+.tableCell:last-child {
+  border-right: none;
+}
+
+.resultPanel {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.resultLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.resultRow {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 12px;
+  align-items: center;
+}
+
+.resultKey {
+  font-size: 0.75rem;
+  word-break: break-all;
+  color: var(--text);
+}
+
+.copyButton {
+  border: 2px solid var(--accent);
+  background: transparent;
+  color: var(--text);
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow);
 }
 
 .statusIndicator {
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 8px;
+  width: 10px;
+  height: 10px;
+  margin-right: 10px;
+  border: 2px solid var(--border);
+  box-shadow: 2px 2px 0 #000;
 }
 
 .online {
-  background: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  background: var(--accent);
 }
 
 .offline {
-  background: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  background: var(--danger);
+}
+
+.statePanel {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  padding: 60px 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stateText {
+  color: var(--text);
+}
+
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.toastVisible {
+  opacity: 1;
+  transform: translateY(0);
 }

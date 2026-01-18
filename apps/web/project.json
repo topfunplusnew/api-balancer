@@ -11,7 +11,7 @@
       "continuous": true,
       "options": {
         "cwd": "apps/web",
-        "command": "next dev -p 3000"
+        "command": "next dev -p 23032"
       }
     }
   }

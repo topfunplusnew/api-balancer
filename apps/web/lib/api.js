@@ -40,26 +40,33 @@ export async function getHealthStatus() {
   }
 }
 
-export async function getApiStats() {
-  try {
-    const data = await fetchApi('/stats');
-    return data;
-  } catch (error) {
-    // 返回模拟数据作为fallback
-    return {
-      success: true,
-      data: {
-        totalCalls: 12543,
-        activeKeys: 8,
-        proxyRequests: 3421,
-        avgResponseTime: 142,
-        dailyChange: {
-          calls: 12.5,
-          keys: 2,
-          proxyRequests: -3.2,
-          responseTime: -8,
-        },
-      },
-    };
+export async function getSupabaseUsers(token, params = {}) {
+  const searchParams = new URLSearchParams();
+
+  if (params.page) {
+    searchParams.set('page', String(params.page));
   }
+
+  if (params.perPage) {
+    searchParams.set('per_page', String(params.perPage));
+  }
+
+  const query = searchParams.toString();
+  const endpoint = query ? `/supabase/users?${query}` : '/supabase/users';
+
+  return fetchApi(endpoint, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : '',
+    },
+  });
+}
+
+export async function getApiKey(username, password) {
+  return fetchApi('/auth/api-key', {
+    method: 'POST',
+    body: JSON.stringify({
+      username,
+      password,
+    }),
+  });
 }
