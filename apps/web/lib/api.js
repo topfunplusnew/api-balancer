@@ -1,15 +1,15 @@
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
+const apiBase = `${baseUrl}/api/v1`;
+
 export async function apiFetch(path, options = {}) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
-  return fetch(`${baseUrl}${path}`, {
+  return fetch(`${apiBase}${path}`, {
     credentials: 'include',
     ...options,
   });
 }
 
 export async function fetchApi(endpoint, options = {}) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-  const url = `${baseUrl}/api/v1${endpoint}`;
+  const url = `${apiBase}${endpoint}`;
 
   try {
     const response = await fetch(url, {
@@ -32,18 +32,8 @@ export async function fetchApi(endpoint, options = {}) {
 }
 
 export async function getHealthStatus() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-  const url = `${baseUrl}/info`;
-
   try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    return await fetchApi('/info');
   } catch (error) {
     console.error('Health check failed:', error);
     throw error;
