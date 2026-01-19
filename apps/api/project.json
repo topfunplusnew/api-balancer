@@ -21,6 +21,11 @@
             "glob": "**/*",
             "input": "apps/api/migrations",
             "output": "migrations"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/api/src/config/third-party-apis",
+            "output": "config/third-party-apis"
           }
         ]
       }

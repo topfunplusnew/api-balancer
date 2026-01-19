@@ -1,69 +1,111 @@
+const fs = require("fs");
+const path = require("path");
+const { createLogger } = require("../middlewares/api-logger");
+const { createRunner } = require("../middlewares/api-middleware-runner");
+
+const apiConfigDir = path.join(__dirname, "third-party-apis");
+
 /**
- * API配置管理
- * 支持通过环境变量动态配置多个API
- * 格式：API_{NAME}_BASE_URL、API_{NAME}_VERSION、API_{NAME}_TOKEN 或 API_{NAME}_API_KEY
+ * 加载API配置文件（支持 config.js 和 config.json）
  */
-const getApiConfig = () => {
+const loadConfigFile = (configDir) => {
+  const jsPath = path.join(configDir, "config.js");
+  const jsonPath = path.join(configDir, "config.json");
+
+  if (fs.existsSync(jsPath)) {
+    try {
+      return require(jsPath);
+    } catch (e) {
+      console.warn(`加载配置失败: ${jsPath}`, e.message);
+      return null;
+    }
+  }
+
+  if (fs.existsSync(jsonPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+    } catch (e) {
+      console.warn(`解析JSON失败: ${jsonPath}`);
+      return null;
+    }
+  }
+
+  return null;
+};
+
+/**
+ * 构建API配置对象
+ */
+const buildApiConfig = (rawConfig, apiName) => {
+  if (!rawConfig?.baseUrl) return null;
+
+  const { baseUrl, version = "", auth = {}, middlewares = [], errorHandler, logger: loggerConfig = {} } = rawConfig;
+
+  // 创建日志实例
+  const logger = createLogger({ apiName, ...loggerConfig });
+
+  // 创建中间件运行器
+  const enabledMiddlewares = middlewares.filter((m) => m.enabled !== false);
+  const middlewareRunner = createRunner(enabledMiddlewares, { logger, errorHandler });
+
+  return {
+    baseUrl,
+    version,
+    auth,
+    logger,
+    middlewareRunner,
+    errorHandler,
+
+    // 获取完整URL
+    getUrl: (apiPath = "") => {
+      const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+      const cleanPath = apiPath.startsWith("/") ? apiPath.slice(1) : apiPath;
+      const versionPath = version ? `${version}/` : "";
+
+      return cleanPath ? `${cleanBase}/${versionPath}${cleanPath}` : version ? `${cleanBase}/${version}` : cleanBase;
+    },
+
+    // 获取认证头
+    getAuthHeaders: () => {
+      const { type, token } = auth;
+      if (!token) return {};
+
+      if (type === "bearer") {
+        return { Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}` };
+      }
+      if (type === "apikey") {
+        return { "X-API-Key": token };
+      }
+      return { Authorization: token };
+    },
+
+    // 执行中间件链
+    runMiddlewares: (context) => middlewareRunner.run(context),
+  };
+};
+
+/**
+ * 加载所有API配置
+ */
+const loadApiConfigs = () => {
   const config = {};
-  const apiNames = new Set();
 
-  // 从环境变量中提取所有API配置
-  Object.keys(process.env).forEach((key) => {
-    if (key.startsWith("API_") && key.endsWith("_BASE_URL")) {
-      const apiName = key.replace("API_", "").replace("_BASE_URL", "").toLowerCase();
-      apiNames.add(apiName);
-    }
-  });
+  if (!fs.existsSync(apiConfigDir)) return config;
 
-  // 为每个API构建配置对象
-  apiNames.forEach((name) => {
-    const baseUrlKey = `API_${name.toUpperCase()}_BASE_URL`;
-    const versionKey = `API_${name.toUpperCase()}_VERSION`;
-    const tokenKey = `API_${name.toUpperCase()}_TOKEN`;
-    const apiKeyKey = `API_${name.toUpperCase()}_API_KEY`;
-    
-    const baseUrl = process.env[baseUrlKey];
-    const version = process.env[versionKey] || "";
-    // 优先使用 TOKEN，如果没有则使用 API_KEY
-    const authToken = process.env[tokenKey] || process.env[apiKeyKey] || "";
+  const entries = fs.readdirSync(apiConfigDir, { withFileTypes: true });
 
-    if (baseUrl) {
-      config[name] = {
-        baseUrl,
-        version,
-        authToken,
-        // 构建完整的API地址
-        getUrl: (path = "") => {
-          // 清理baseUrl末尾的斜杠
-          const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-          // 清理path开头的斜杠
-          const cleanPath = path.startsWith("/") ? path.slice(1) : path;
-          
-          if (!cleanPath) {
-            // 如果path为空，只返回baseUrl和version
-            return version ? `${cleanBaseUrl}/${version}` : cleanBaseUrl;
-          }
-          
-          // 构建完整URL
-          const versionPath = version ? `${version}/` : "";
-          return `${cleanBaseUrl}/${versionPath}${cleanPath}`;
-        },
-        // 获取鉴权请求头
-        getAuthHeaders: () => {
-          if (!authToken) {
-            return {};
-          }
-          // 如果 Token 以 Bearer 开头，直接使用；否则添加 Bearer 前缀
-          if (authToken.startsWith("Bearer ")) {
-            return { Authorization: authToken };
-          }
-          return { Authorization: `Bearer ${authToken}` };
-        },
-      };
-    }
-  });
+  entries
+    .filter((e) => e.isDirectory())
+    .forEach((entry) => {
+      const apiName = entry.name.toLowerCase();
+      const configPath = path.join(apiConfigDir, entry.name);
+      const rawConfig = loadConfigFile(configPath);
+      const apiConfig = buildApiConfig(rawConfig, apiName);
+
+      if (apiConfig) config[apiName] = apiConfig;
+    });
 
   return config;
 };
 
-module.exports = getApiConfig();
+module.exports = loadApiConfigs();
