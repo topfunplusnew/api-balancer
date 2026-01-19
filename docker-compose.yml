@@ -38,11 +38,11 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: express-starter-app
     ports:
-      - "0.0.0.0:${PORT:-25052}:${PORT:-25052}"
+      - "0.0.0.0:25052:25052"
     env_file:
       - .env
     environment:
-      - PORT=${PORT:-25052}
+      - PORT=25052
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
