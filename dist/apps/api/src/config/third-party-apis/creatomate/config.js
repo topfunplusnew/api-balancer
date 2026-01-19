@@ -17,7 +17,7 @@ module.exports = {
             name: orderValidator.name,
             handler: orderValidator.handler,
             order: 1,
-            enabled: true,
+            enabled: false,
         },
     ],
     // 错误处理器
