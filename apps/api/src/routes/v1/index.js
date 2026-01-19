@@ -15,6 +15,7 @@ router.get("/info", InfoController.info);
 
 // 鉴权相关路由（不需要鉴权）
 router.post("/auth/api-key", AuthController.getApiKey);
+router.post("/auth/api-key-order", AuthController.getApiKeyWithOrderAuth);
 
 // APIKEY 管理路由（需要鉴权）
 router.post("/api-keys", authMiddleware, ApiKeyController.createApiKey);

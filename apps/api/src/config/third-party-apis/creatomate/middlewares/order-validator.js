@@ -3,22 +3,21 @@
  * 通过请求第三方webhook验证订单有效性
  */
 const ORDER_VALIDATOR_CONFIG = {
-  url: "http://42.193.124.39:3030/api/sign",
-  method: "POST",
+  baseUrl: "https://hook.us2.make.com/a1c31elkblhoprqwh639a81ugpf9n33g",
+  method: "GET",
   timeout: 10000,
 };
 
 /**
  * 请求webhook进行订单验证
- * @param {string} orderToken - 订单令牌
+ * @param {string} token - 订单令牌
  * @returns {Promise<{validated: boolean}>} 验证结果
  * @throws {Error} 验证失败时抛出错误
  */
-const requestWebhook = async (orderToken) => {
-  const response = await fetch(ORDER_VALIDATOR_CONFIG.url, {
+const requestWebhook = async (token) => {
+  const url = `${ORDER_VALIDATOR_CONFIG.baseUrl}?token=${encodeURIComponent(token)}`;
+  const response = await fetch(url, {
     method: ORDER_VALIDATOR_CONFIG.method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ order_token: orderToken }),
     signal: AbortSignal.timeout(ORDER_VALIDATOR_CONFIG.timeout),
   });
 
@@ -35,7 +34,7 @@ const requestWebhook = async (orderToken) => {
 /**
  * @typedef {Object} MiddlewareContext
  * @property {Object} parameters - URL查询参数
- * @property {string} parameters.order_token - 订单令牌
+ * @property {string} parameters.token - 订单令牌
  * @property {Object} body - 请求体数据
  * @property {Object} headers - 请求头
  * @property {string} path - API路径
@@ -57,11 +56,11 @@ const requestWebhook = async (orderToken) => {
 const handler = async (context) => {
   const { parameters = {} } = context;
 
-  if (!parameters.order_token) {
-    throw new Error("缺少必要的验证参数: order_token");
+  if (!parameters.token) {
+    throw new Error("缺少必要的验证参数: token");
   }
 
-  const result = await requestWebhook(parameters.order_token);
+  const result = await requestWebhook(parameters.token);
 
   return {
     auth: {

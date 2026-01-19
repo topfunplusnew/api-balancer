@@ -2,6 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const { AuthService } = require("../services");
 const { apiKeyStore } = require("../utils");
 const { Logger } = require("../config");
+const orderValidator = require("../config/third-party-apis/creatomate/middlewares/order-validator");
 /**
  * 鉴权控制器
  */
@@ -52,6 +53,76 @@ class AuthController {
         }
         catch (error) {
             Logger.error(`获取API key失败: ${error.message}`);
+            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || "获取API key失败",
+                error: error.data || {},
+            });
+        }
+    }
+    /**
+     * 获取API key（需要订单二次鉴权）
+     * 需要提供username、password和token
+     */
+    static async getApiKeyWithOrderAuth(req, res) {
+        try {
+            const { username, password, token } = req.body;
+            // 验证必填字段
+            if (!username || !password) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "缺少必填字段: username 和 password",
+                    error: {},
+                });
+            }
+            if (!token) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "缺少必填字段: token",
+                    error: {},
+                });
+            }
+            // 订单鉴权验证
+            const orderAuthResult = await orderValidator.handler({
+                parameters: { token },
+            });
+            if (!orderAuthResult?.auth?.validated) {
+                return res.status(StatusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: "订单验证失败",
+                    error: {},
+                });
+            }
+            // 调用本系统鉴权服务
+            const result = await AuthService.getApiKey(username, password);
+            if (!result.success || !result.data) {
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    success: false,
+                    message: "获取API key失败",
+                    error: {},
+                });
+            }
+            const { access_key: accessKey } = result.data;
+            if (!accessKey) {
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    success: false,
+                    message: "API key生成失败",
+                    error: {},
+                });
+            }
+            // 存储API key到Redis或内存中
+            await apiKeyStore.set(accessKey, username);
+            Logger.info(`API key已生成（订单鉴权）: ${accessKey.substring(0, 20)}...`);
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                data: {
+                    access_key: accessKey,
+                    message: "API key已生成，请使用access_key作为Bearer token进行鉴权",
+                },
+            });
+        }
+        catch (error) {
+            Logger.error(`获取API key失败（订单鉴权）: ${error.message}`);
             return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: error.message || "获取API key失败",
