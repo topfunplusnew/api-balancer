@@ -762,6 +762,226 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   
+  /proxy/coze/{path}:
+    get:
+      tags:
+        - Proxy
+      summary: Coze API代理 - GET请求
+      description: |
+        将GET请求转发到Coze API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyCozeGet
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Coze API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: conversations
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Proxy
+      summary: Coze API代理 - POST请求
+      description: |
+        将POST请求转发到Coze API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyCozePost
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Coze API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: conversations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 请求体将直接转发到Coze API
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '201':
+          description: 资源创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /proxy/n8n/{path}:
+    get:
+      tags:
+        - Proxy
+      summary: n8n API代理 - GET请求
+      description: |
+        将GET请求转发到n8n API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyN8nGet
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: n8n API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: workflows
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Proxy
+      summary: n8n API代理 - POST请求
+      description: |
+        将POST请求转发到n8n API。
+        
+        **鉴权方式**：
+        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
+        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      operationId: proxyN8nPost
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: n8n API路径（不包含baseUrl和version）
+          schema:
+            type: string
+          example: workflows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 请求体将直接转发到n8n API
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '201':
+          description: 资源创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: 请求错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /proxy/{apiName}/{path}:
     get:
       tags:

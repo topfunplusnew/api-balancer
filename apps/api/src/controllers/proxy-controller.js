@@ -33,6 +33,24 @@ class ProxyController {
   }
 
   /**
+   * 转发请求到Coze API
+   * 注意：用户的 Authorization header 不会被转发，使用 .env 中配置的固定 Token
+   */
+  static async cozeProxy(req, res) {
+    req.params.apiName = "coze";
+    return ProxyController.genericProxy(req, res);
+  }
+
+  /**
+   * 转发请求到n8n API
+   * 注意：用户的 Authorization header 不会被转发，使用 .env 中配置的固定 Token
+   */
+  static async n8nProxy(req, res) {
+    req.params.apiName = "n8n";
+    return ProxyController.genericProxy(req, res);
+  }
+
+  /**
    * 通用转发方法（支持动态API名称）
    * 注意：用户的 Authorization header 不会被转发，使用 .env 中配置的固定 Token
    */

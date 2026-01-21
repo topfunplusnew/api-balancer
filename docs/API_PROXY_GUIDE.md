@@ -71,6 +71,14 @@ pnpm dev
 POST /api/v1/proxy/creatomate/renders
 GET /api/v1/proxy/creatomate/renders/{render_id}
 
+# Coze API
+POST /api/v1/proxy/coze/{path}
+GET /api/v1/proxy/coze/{path}
+
+# n8n API
+POST /api/v1/proxy/n8n/{path}
+GET /api/v1/proxy/n8n/{path}
+
 # 支付服务API
 POST /api/v1/proxy/payment/charges
 GET /api/v1/proxy/payment/charges/{charge_id}
@@ -185,6 +193,34 @@ curl -X GET http://localhost:5000/api/v1/proxy/user_service/users/123 \
 **实际转发到的URL：**
 ```
 GET https://api.user.com/v1/users/123
+```
+
+### 示例4：Coze API - 代理请求
+
+**环境变量配置：**
+```bash
+API_COZE_BASE_URL=https://api.coze.com
+API_COZE_VERSION=v1
+```
+
+**请求示例：**
+```bash
+curl -X GET http://localhost:5000/api/v1/proxy/coze/{path} \
+     -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### 示例5：n8n API - 代理请求
+
+**环境变量配置：**
+```bash
+API_N8N_BASE_URL=https://n8n.example.com
+API_N8N_VERSION=api/v1
+```
+
+**请求示例：**
+```bash
+curl -X GET http://localhost:5000/api/v1/proxy/n8n/{path} \
+     -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ## URL构建规则
