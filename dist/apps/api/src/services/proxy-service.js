@@ -73,9 +73,23 @@ class ProxyService {
         if (data && ["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {
             requestConfig.data = data;
         }
+        // 打印请求详情日志
+        const logHeaders = { ...requestConfig.headers };
+        if (logHeaders.Authorization) {
+            logHeaders.Authorization = logHeaders.Authorization.substring(0, 20) + "***";
+        }
+        Logger.info(`[Proxy] >>> 请求: ${method.toUpperCase()} ${url}`);
+        Logger.info(`[Proxy] >>> Headers: ${JSON.stringify(logHeaders)}`);
+        if (Object.keys(params).length > 0) {
+            Logger.info(`[Proxy] >>> Params: ${JSON.stringify(params)}`);
+        }
+        if (requestConfig.data) {
+            Logger.info(`[Proxy] >>> Body: ${JSON.stringify(requestConfig.data)}`);
+        }
         try {
-            Logger.info(`转发请求: ${method} ${url}`);
             const response = await axios(requestConfig);
+            Logger.info(`[Proxy] <<< 响应: ${response.status} ${response.statusText}`);
+            Logger.info(`[Proxy] <<< Data: ${JSON.stringify(response.data).substring(0, 500)}${JSON.stringify(response.data).length > 500 ? "..." : ""}`);
             return {
                 success: true,
                 data: response.data,
@@ -84,8 +98,10 @@ class ProxyService {
             };
         }
         catch (error) {
-            Logger.error(`转发请求失败: ${error.message}`);
+            Logger.error(`[Proxy] <<< 请求失败: ${error.message}`);
             if (error.response) {
+                Logger.error(`[Proxy] <<< 错误状态: ${error.response.status}`);
+                Logger.error(`[Proxy] <<< 错误响应: ${JSON.stringify(error.response.data)}`);
                 throw {
                     statusCode: error.response.status,
                     message: error.response.data?.message || error.message,
@@ -93,12 +109,14 @@ class ProxyService {
                 };
             }
             else if (error.request) {
+                Logger.error(`[Proxy] <<< 网络错误: 无法连接到目标服务器`);
                 throw {
                     statusCode: StatusCodes.BAD_GATEWAY,
                     message: "无法连接到目标API服务器",
                 };
             }
             else {
+                Logger.error(`[Proxy] <<< 内部错误: ${error.message}`);
                 throw {
                     statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
                     message: error.message,

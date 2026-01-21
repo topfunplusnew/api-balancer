@@ -40,13 +40,17 @@ Content-Type: application/json
 GET http://localhost:5000/api/v1/proxy/creatomate/v1/templates
 Authorization: Bearer YOUR_API_KEY
 
+### Creatomate API转发 - 获取单个模板详情（含RenderScript源码）
+GET http://localhost:5000/api/v1/proxy/creatomate/v1/templates/YOUR_TEMPLATE_ID
+Authorization: Bearer YOUR_API_KEY
+
 ### 通用API转发示例（动态API名称）
 GET http://localhost:5000/api/v1/proxy/creatomate/v2/renders
 Authorization: Bearer YOUR_API_KEY
 
-### Creatomate API转发 - 创建视频渲染（完整示例）
+### Creatomate API转发 - 创建视频渲染（RenderScript方式）
 POST http://localhost:5000/api/v1/proxy/creatomate/v2/renders
-Authorization: Bearer 52181a0602234279b50469837027e68c06a2922dfc920a4a888288acf1c5c7aed9aa22d212b8f3efa7542fdc8ab79e9e
+Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
 {
@@ -63,4 +67,22 @@ Content-Type: application/json
       "height": "25%"
     }
   ]
+}
+
+### Creatomate API转发 - 基于模板创建渲染（完整参数示例）
+POST http://localhost:5000/api/v1/proxy/creatomate/v2/renders
+Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+
+{
+  "template_id": "YOUR_TEMPLATE_ID_HERE",
+  "modifications": {
+    "Text-1": "This text is placed in the element Text-1",
+    "Video-1": "https://cdn.creatomate.com/demo/video1.mp4"
+  },
+  "render_scale": 0.75,
+  "max_width": 1080,
+  "max_height": 1080,
+  "webhook_url": "https://example.com/webhook",
+  "metadata": "Any text value"
 }
