@@ -28,6 +28,12 @@ router.get("/supabase/users", authMiddleware, SupabaseAdminController.listUsers)
 // Creatomate API转发路由（需要鉴权）
 router.all("/proxy/creatomate/:path(*)", authMiddleware, ProxyController.creatomateProxy);
 
+// Coze API转发路由（需要鉴权）
+router.all("/proxy/coze/:path(*)", authMiddleware, ProxyController.cozeProxy);
+
+// n8n API转发路由（需要鉴权）
+router.all("/proxy/n8n/:path(*)", authMiddleware, ProxyController.n8nProxy);
+
 // 通用API转发路由（支持动态API名称，需要鉴权）
 router.all("/proxy/:apiName/:path(*)", authMiddleware, ProxyController.genericProxy);
 
