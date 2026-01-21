@@ -1,28 +1,31 @@
 /**
- * Creatomate API 配置
+ * Coze API 配置
  */
-const orderValidator = require("./middlewares/order-validator");
+const signatureValidator = require("./middlewares/signature-validator");
+const baseUrl = process.env.API_COZE_BASE_URL || "https://api.coze.com";
+const version = process.env.API_COZE_VERSION || "v1";
+const token = process.env.API_COZE_TOKEN || "mock_coze_token";
 module.exports = {
     // 基础配置
-    baseUrl: "https://api.creatomate.com",
-    version: "", // 版本号在调用路径中指定，如 v2/renders 或 v1/templates
+    baseUrl,
+    version,
     // 认证配置
     auth: {
         type: "bearer",
-        token: "52181a0602234279b50469837027e68c06a2922dfc920a4a888288acf1c5c7aed9aa22d212b8f3efa7542fdc8ab79e9e",
+        token,
     },
     // 中间件配置 - 按 order 顺序执行
     middlewares: [
         {
-            name: orderValidator.name,
-            handler: orderValidator.handler,
+            name: signatureValidator.name,
+            handler: signatureValidator.handler,
             order: 1,
             enabled: false,
         },
     ],
     // 错误处理器
     errorHandler: (error, context) => {
-        const { middleware, context: ctx } = context || {};
+        const { middleware } = context || {};
         return {
             success: false,
             error: {

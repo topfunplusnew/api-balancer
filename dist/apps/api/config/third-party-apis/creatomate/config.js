@@ -6,7 +6,7 @@ const orderValidator = require("./middlewares/order-validator");
 module.exports = {
   // 基础配置
   baseUrl: "https://api.creatomate.com",
-  version: "v2",
+  version: "", // 版本号在调用路径中指定，如 v2/renders 或 v1/templates
 
   // 认证配置
   auth: {

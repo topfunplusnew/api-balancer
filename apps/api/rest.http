@@ -21,11 +21,11 @@ Content-Type: application/json
 # }
 
 ### Creatomate API转发 - 获取renders列表
-GET http://localhost:5000/api/v1/proxy/creatomate/renders
+GET http://localhost:5000/api/v1/proxy/creatomate/v2/renders
 Authorization: Bearer YOUR_API_KEY
 
 ### Creatomate API转发 - 创建render
-POST http://localhost:5000/api/v1/proxy/creatomate/renders
+POST http://localhost:5000/api/v1/proxy/creatomate/v2/renders
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -36,12 +36,16 @@ Content-Type: application/json
   }
 }
 
+### Creatomate API转发 - 获取模板列表
+GET http://localhost:5000/api/v1/proxy/creatomate/v1/templates
+Authorization: Bearer YOUR_API_KEY
+
 ### 通用API转发示例（动态API名称）
-GET http://localhost:5000/api/v1/proxy/creatomate/renders
+GET http://localhost:5000/api/v1/proxy/creatomate/v2/renders
 Authorization: Bearer YOUR_API_KEY
 
 ### Creatomate API转发 - 创建视频渲染（完整示例）
-POST http://localhost:5000/api/v1/proxy/creatomate/renders
+POST http://localhost:5000/api/v1/proxy/creatomate/v2/renders
 Authorization: Bearer 52181a0602234279b50469837027e68c06a2922dfc920a4a888288acf1c5c7aed9aa22d212b8f3efa7542fdc8ab79e9e
 Content-Type: application/json
 
