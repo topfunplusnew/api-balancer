@@ -19,7 +19,14 @@ class TemplateConfigService {
       {}
     );
 
-    return result?.data?.modifications || {};
+    const modifications = result?.data?.modifications || {};
+
+    return Object.entries(modifications).map(([key, value]) => ({
+      name: key,
+      type: "text",
+      label: key,
+      default: value,
+    }));
   }
 }
 

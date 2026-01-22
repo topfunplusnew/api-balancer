@@ -10,7 +10,13 @@ class TemplateConfigService {
      */
     static async getTemplateConfig(templateId) {
         const result = await ProxyService.proxyRequest("creatomate", `v2/renders/${templateId}`, "GET", null, {}, {});
-        return result?.data?.modifications || {};
+        const modifications = result?.data?.modifications || {};
+        return Object.entries(modifications).map(([key, value]) => ({
+            name: key,
+            type: "text",
+            label: key,
+            default: value,
+        }));
     }
 }
 module.exports = TemplateConfigService;
