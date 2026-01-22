@@ -1,0 +1,347 @@
+paths:
+  /proxy/creatomate/templates:
+    get:
+      tags:
+        - Creatomate API
+      summary: 获取 Creatomate 项目中的所有模板
+      description: |
+        获取你的 Creatomate 项目中的所有模板列表。返回模板的元数据，包括 ID、名称、标签、创建日期和更新日期。
+        
+        **实际转发到**: `GET https://api.creatomate.com/v1/templates`
+        
+        **功能说明**:
+        - 返回当前项目中所有模板的元数据
+        - 不包含模板的 RenderScript 源代码
+        - 可用于构建模板选择器或自动化工作流
+        
+        **鉴权说明**:
+        - 需要提供本系统的 Bearer Token 或 APIKEY
+        - 本系统会自动使用 `.env` 中配置的 `API_CREATOMATE_TOKEN` 来调用 Creatomate API
+        - 你的 Token 不会被转发到 Creatomate
+        
+        **使用场景**:
+        - 构建允许用户从列表中选择模板的应用
+        - 设置随机选择模板的自动化工作流
+        - 获取项目中所有模板的概览
+      operationId: getCreatomateTemplates
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: 成功获取模板列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "获取模板列表成功"
+                  data:
+                    type: array
+                    description: 模板列表
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: 模板 ID
+                          example: "c937d125-b99b-4690-96f0-6aa1f09438c9"
+                        name:
+                          type: string
+                          description: 模板名称
+                          example: "My Template"
+                        tags:
+                          type: array
+                          description: 分配给模板的标签
+                          items:
+                            type: string
+                          example: ["My", "Assigned", "Tags"]
+                        created_at:
+                          type: string
+                          description: 创建时间
+                          example: "2026-01-01 12:00:00.000 +0200"
+                        updated_at:
+                          type: string
+                          description: 更新时间
+                          example: "2026-01-01 12:00:00.000 +0200"
+              examples:
+                success:
+                  summary: 成功响应示例
+                  value:
+                    success: true
+                    message: "获取模板列表成功"
+                    data:
+                      - id: "c937d125-b99b-4690-96f0-6aa1f09438c9"
+                        name: "My Template"
+                        tags: ["My", "Assigned", "Tags"]
+                        created_at: "2026-01-01 12:00:00.000 +0200"
+                        updated_at: "2026-01-01 12:00:00.000 +0200"
+                      - id: "bf95f053-28e1-4300-ac86-b52e5a3e0e5e"
+                        name: "Another Template"
+                        tags: []
+                        created_at: "2026-01-01 12:00:00.000 +0200"
+                        updated_at: "2026-01-01 12:00:00.000 +0200"
+        '401':
+          description: 鉴权失败
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "鉴权失败，请提供有效的 Bearer Token 或 APIKEY"
+                  error:
+                    type: object
+                    example: {}
+        '500':
+          description: 服务器错误或 Creatomate API 调用失败
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "获取模板列表失败"
+                  error:
+                    type: object
+
+  /proxy/creatomate/renders:
+    get:
+      tags:
+        - Creatomate API
+      summary: 获取渲染列表
+      description: |
+        获取 Creatomate 项目中的渲染列表。
+        
+        **实际转发到**: `GET https://api.creatomate.com/v1/renders`
+        
+        **鉴权说明**:
+        - 需要提供本系统的 Bearer Token 或 APIKEY
+        - 本系统会自动使用 `.env` 中配置的 `API_CREATOMATE_TOKEN`
+      operationId: getCreatomateRenders
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: 页码（从 1 开始）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+      responses:
+        '200':
+          description: 成功获取渲染列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: Creatomate API 返回的渲染列表数据
+        '401':
+          description: 鉴权失败
+        '500':
+          description: 服务器错误
+
+    post:
+      tags:
+        - Creatomate API
+      summary: 创建新的视频渲染任务
+      description: |
+        创建一个新的视频渲染任务。
+        
+        **实际转发到**: `POST https://api.creatomate.com/v1/renders`
+        
+        **鉴权说明**:
+        - 需要提供本系统的 Bearer Token 或 APIKEY
+        - 本系统会自动使用 `.env` 中配置的 `API_CREATOMATE_TOKEN`
+        
+        **使用场景**:
+        - 基于模板创建视频
+        - 使用 RenderScript 创建自定义视频
+        - 批量生成视频内容
+      operationId: createCreatomateRender
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        description: 渲染任务配置
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                template_id:
+                  type: string
+                  format: uuid
+                  description: 使用的模板 ID（可选，如果不使用模板则提供完整的 elements）
+                  example: "c937d125-b99b-4690-96f0-6aa1f09438c9"
+                modifications:
+                  type: object
+                  description: 对模板的修改（当使用 template_id 时）
+                  additionalProperties: true
+                output_format:
+                  type: string
+                  description: 输出格式
+                  enum: [mp4, mov, gif, png, jpg]
+                  example: "mp4"
+                width:
+                  type: integer
+                  description: 视频宽度（像素）
+                  example: 1280
+                height:
+                  type: integer
+                  description: 视频高度（像素）
+                  example: 720
+                duration:
+                  type: number
+                  description: 视频时长（秒）
+                  example: 3
+                frame_rate:
+                  type: integer
+                  description: 帧率
+                  example: 30
+                elements:
+                  type: array
+                  description: 视频元素（当不使用模板时）
+                  items:
+                    type: object
+                    additionalProperties: true
+            examples:
+              withTemplate:
+                summary: 使用模板创建
+                value:
+                  template_id: "c937d125-b99b-4690-96f0-6aa1f09438c9"
+                  modifications:
+                    "Text-1": "Hello World"
+              customRender:
+                summary: 自定义渲染
+                value:
+                  output_format: "mp4"
+                  width: 1280
+                  height: 720
+                  duration: 3
+                  elements:
+                    - type: "text"
+                      text: "My first video generated with RenderScript!"
+                      fill_color: "#ff0000"
+                      width: "50%"
+                      height: "25%"
+      responses:
+        '201':
+          description: 渲染任务创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: 创建的渲染任务信息
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: 渲染任务 ID
+                      status:
+                        type: string
+                        description: 渲染状态
+                        enum: [pending, processing, succeeded, failed]
+        '400':
+          description: 请求参数错误
+        '401':
+          description: 鉴权失败
+        '500':
+          description: 服务器错误
+
+  /proxy/creatomate/renders/{renderId}:
+    get:
+      tags:
+        - Creatomate API
+      summary: 获取指定渲染任务的详情
+      description: |
+        获取指定渲染任务的详细信息，包括状态、进度和结果 URL。
+        
+        **实际转发到**: `GET https://api.creatomate.com/v1/renders/{renderId}`
+        
+        **鉴权说明**:
+        - 需要提供本系统的 Bearer Token 或 APIKEY
+        - 本系统会自动使用 `.env` 中配置的 `API_CREATOMATE_TOKEN`
+      operationId: getCreatomateRenderById
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: renderId
+          in: path
+          required: true
+          description: 渲染任务 ID
+          schema:
+            type: string
+            format: uuid
+          example: "d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
+      responses:
+        '200':
+          description: 成功获取渲染任务详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum: [pending, processing, succeeded, failed]
+                      url:
+                        type: string
+                        format: uri
+                        description: 渲染完成后的视频 URL
+        '401':
+          description: 鉴权失败
+        '404':
+          description: 渲染任务不存在
+        '500':
+          description: 服务器错误
+

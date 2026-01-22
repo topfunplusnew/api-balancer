@@ -73,23 +73,42 @@ class ProxyService {
         if (data && ["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {
             requestConfig.data = data;
         }
-        // 打印请求详情日志
+        // 打印详细的请求日志
+        Logger.info("\n" + "=".repeat(80));
+        Logger.info(`[Proxy] API代理请求 - ${apiName.toUpperCase()}`);
+        Logger.info("=".repeat(80));
+        Logger.info(`[Proxy] >>> 请求方法: ${method.toUpperCase()}`);
+        Logger.info(`[Proxy] >>> 目标地址: ${url}`);
+        Logger.info(`[Proxy] >>> 原始路径: ${path}`);
+        // 打印鉴权头（隐藏敏感信息）
         const logHeaders = { ...requestConfig.headers };
         if (logHeaders.Authorization) {
-            logHeaders.Authorization = logHeaders.Authorization.substring(0, 20) + "***";
+            const authValue = logHeaders.Authorization;
+            if (authValue.length > 30) {
+                logHeaders.Authorization = authValue.substring(0, 20) + "..." + authValue.substring(authValue.length - 10);
+            }
         }
-        Logger.info(`[Proxy] >>> 请求: ${method.toUpperCase()} ${url}`);
-        Logger.info(`[Proxy] >>> Headers: ${JSON.stringify(logHeaders)}`);
+        Logger.info(`[Proxy] >>> 请求头: ${JSON.stringify(logHeaders, null, 2)}`);
         if (Object.keys(params).length > 0) {
-            Logger.info(`[Proxy] >>> Params: ${JSON.stringify(params)}`);
+            Logger.info(`[Proxy] >>> 查询参数: ${JSON.stringify(params, null, 2)}`);
         }
         if (requestConfig.data) {
-            Logger.info(`[Proxy] >>> Body: ${JSON.stringify(requestConfig.data)}`);
+            const bodyStr = JSON.stringify(requestConfig.data, null, 2);
+            Logger.info(`[Proxy] >>> 请求体: ${bodyStr.length > 500 ? bodyStr.substring(0, 500) + "...\n(内容已截断)" : bodyStr}`);
         }
+        Logger.info("=".repeat(80));
         try {
             const response = await axios(requestConfig);
-            Logger.info(`[Proxy] <<< 响应: ${response.status} ${response.statusText}`);
-            Logger.info(`[Proxy] <<< Data: ${JSON.stringify(response.data).substring(0, 500)}${JSON.stringify(response.data).length > 500 ? "..." : ""}`);
+            // 打印响应日志
+            Logger.info(`[Proxy] <<< 响应状态: ${response.status} ${response.statusText}`);
+            const responseData = JSON.stringify(response.data, null, 2);
+            if (responseData.length > 1000) {
+                Logger.info(`[Proxy] <<< 响应数据 (前1000字符):\n${responseData.substring(0, 1000)}...\n(内容已截断，总长度: ${responseData.length})`);
+            }
+            else {
+                Logger.info(`[Proxy] <<< 响应数据:\n${responseData}`);
+            }
+            Logger.info("=".repeat(80) + "\n");
             return {
                 success: true,
                 data: response.data,
@@ -98,10 +117,15 @@ class ProxyService {
             };
         }
         catch (error) {
-            Logger.error(`[Proxy] <<< 请求失败: ${error.message}`);
+            Logger.error("\n" + "=".repeat(80));
+            Logger.error(`[Proxy] ❌ 请求失败`);
+            Logger.error("=".repeat(80));
+            Logger.error(`[Proxy] <<< 错误信息: ${error.message}`);
             if (error.response) {
-                Logger.error(`[Proxy] <<< 错误状态: ${error.response.status}`);
-                Logger.error(`[Proxy] <<< 错误响应: ${JSON.stringify(error.response.data)}`);
+                Logger.error(`[Proxy] <<< HTTP状态码: ${error.response.status}`);
+                Logger.error(`[Proxy] <<< 响应头: ${JSON.stringify(error.response.headers, null, 2)}`);
+                Logger.error(`[Proxy] <<< 错误响应:\n${JSON.stringify(error.response.data, null, 2)}`);
+                Logger.error("=".repeat(80) + "\n");
                 throw {
                     statusCode: error.response.status,
                     message: error.response.data?.message || error.message,
@@ -110,6 +134,12 @@ class ProxyService {
             }
             else if (error.request) {
                 Logger.error(`[Proxy] <<< 网络错误: 无法连接到目标服务器`);
+                Logger.error(`[Proxy] <<< 请求配置: ${JSON.stringify({
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    timeout: error.config?.timeout
+                }, null, 2)}`);
+                Logger.error("=".repeat(80) + "\n");
                 throw {
                     statusCode: StatusCodes.BAD_GATEWAY,
                     message: "无法连接到目标API服务器",
@@ -117,6 +147,8 @@ class ProxyService {
             }
             else {
                 Logger.error(`[Proxy] <<< 内部错误: ${error.message}`);
+                Logger.error(`[Proxy] <<< 错误堆栈:\n${error.stack}`);
+                Logger.error("=".repeat(80) + "\n");
                 throw {
                     statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
                     message: error.message,
