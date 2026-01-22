@@ -2,13 +2,12 @@
  * Coze API 配置
  */
 const signatureValidator = require("./middlewares/signature-validator");
+// 从环境变量读取配置（baseUrl 不含版本号，版本号在具体接口路径中指定）
 const baseUrl = process.env.API_COZE_BASE_URL || "https://api.coze.com";
-const version = process.env.API_COZE_VERSION || "v1";
 const token = process.env.API_COZE_TOKEN || "mock_coze_token";
 module.exports = {
-    // 基础配置
+    // 基础配置（baseUrl 不含版本号，版本号在接口路径中指定）
     baseUrl,
-    version,
     // 认证配置
     auth: {
         type: "bearer",

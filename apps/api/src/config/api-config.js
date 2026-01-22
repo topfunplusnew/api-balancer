@@ -39,7 +39,7 @@ const loadConfigFile = (configDir) => {
 const buildApiConfig = (rawConfig, apiName) => {
   if (!rawConfig?.baseUrl) return null;
 
-  const { baseUrl, version = "", auth = {}, middlewares = [], errorHandler, logger: loggerConfig = {} } = rawConfig;
+  const { baseUrl, auth = {}, middlewares = [], errorHandler, logger: loggerConfig = {} } = rawConfig;
 
   // 创建日志实例
   const logger = createLogger({ apiName, ...loggerConfig });
@@ -50,19 +50,16 @@ const buildApiConfig = (rawConfig, apiName) => {
 
   return {
     baseUrl,
-    version,
     auth,
     logger,
     middlewareRunner,
     errorHandler,
 
-    // 获取完整URL
+    // 获取完整URL（baseUrl 已包含版本号）
     getUrl: (apiPath = "") => {
       const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
       const cleanPath = apiPath.startsWith("/") ? apiPath.slice(1) : apiPath;
-      const versionPath = version ? `${version}/` : "";
-
-      return cleanPath ? `${cleanBase}/${versionPath}${cleanPath}` : version ? `${cleanBase}/${version}` : cleanBase;
+      return cleanPath ? `${cleanBase}/${cleanPath}` : cleanBase;
     },
 
     // 获取认证头

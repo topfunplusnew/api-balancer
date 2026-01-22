@@ -596,7 +596,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   
-  /proxy/creatomate/templates:
+  /creatomate/v1/templates:
     get:
       tags:
         - Creatomate API
@@ -605,6 +605,8 @@ paths:
         获取你的 Creatomate 项目中的所有模板列表。返回模板的元数据，包括 ID、名称、标签、创建日期和更新日期。
         
         **实际转发到**: `GET https://api.creatomate.com/v1/templates`
+        
+        **路径说明**: 版本号 `v1` 在接口路径中指定，支持灵活切换 API 版本。
         
         **功能说明**:
         - 返回当前项目中所有模板的元数据
@@ -697,56 +699,95 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   
-  /proxy/creatomate/{path}:
+  /creatomate/v1/renders:
     get:
       tags:
-        - Proxy
-      summary: Creatomate API代理 - GET请求
+        - Creatomate API
+      summary: 获取 Creatomate 渲染列表
       description: |
-        将GET请求转发到Creatomate API。
+        获取项目中的渲染任务列表，支持分页。
         
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
-      operationId: proxyCreatomateGet
+        **实际转发到**: `GET https://api.creatomate.com/v1/renders`
+        
+        **路径说明**: 版本号 `v1` 在接口路径中指定。
+        
+        **功能说明**:
+        - 获取所有渲染任务的列表
+        - 支持分页查询
+        - 按创建时间倒序排列
+        
+        **鉴权说明**:
+        - 需要提供本系统的 Bearer Token 或 APIKEY
+        - 本系统会自动使用 `.env` 中配置的 `API_CREATOMATE_TOKEN`
+        
+        **使用场景**:
+        - 查看历史渲染记录
+        - 监控渲染队列状态
+        - 批量管理渲染任务
+      operationId: getCreatomateRenders
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
       parameters:
-        - name: path
-          in: path
-          required: true
-          description: Creatomate API路径（不包含baseUrl和version）
-          schema:
-            type: string
-          example: renders
         - name: page
           in: query
-          description: 页码
+          description: 页码（从 1 开始）
           schema:
             type: integer
-            example: 1
+            minimum: 1
+            default: 1
+          example: 1
         - name: limit
           in: query
-          description: 每页数量
+          description: 每页数量（最大 100）
           schema:
             type: integer
-            example: 10
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
       responses:
         '200':
-          description: 请求成功
+          description: 成功获取渲染列表
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      renders:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: 渲染任务 ID
+                            status:
+                              type: string
+                              enum: [pending, processing, succeeded, failed]
+                              description: 渲染状态
+                            created_at:
+                              type: string
+                              format: date-time
+                            url:
+                              type: string
+                              format: uri
+                              description: 渲染完成后的视频 URL
+                      total:
+                        type: integer
+                        description: 总记录数
+                      page:
+                        type: integer
+                        description: 当前页码
         '401':
           description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '400':
-          description: 请求错误
           content:
             application/json:
               schema:
@@ -760,242 +801,163 @@ paths:
     
     post:
       tags:
-        - Proxy
-      summary: Creatomate API代理 - POST请求
+        - Creatomate API
+      summary: 创建 Creatomate 渲染任务
       description: |
-        将POST请求转发到Creatomate API。
+        创建一个新的视频渲染任务，支持两种方式：使用模板或自定义 RenderScript。
         
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
-      operationId: proxyCreatomatePost
+        **实际转发到**: `POST https://api.creatomate.com/v1/renders`
+        
+        **功能说明**:
+        - 基于模板创建视频（推荐）：使用 `template_id` 和 `modifications`
+        - 自定义渲染：使用 `elements` 数组定义完整的视频内容
+        - 异步处理：返回任务 ID，需轮询或使用 Webhook 获取结果
+        
+        **鉴权说明**:
+        - 需要提供本系统的 Bearer Token 或 APIKEY
+        - 本系统会自动使用 `.env` 中配置的 `API_CREATOMATE_TOKEN`
+        
+        **使用场景**:
+        - 批量生成营销视频
+        - 自动化视频制作工作流
+        - 个性化视频内容生成
+      operationId: createCreatomateRender
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
-      parameters:
-        - name: path
-          in: path
-          required: true
-          description: Creatomate API路径（不包含baseUrl和version）
-          schema:
-            type: string
-          example: renders
       requestBody:
         required: true
+        description: 渲染任务配置
         content:
           application/json:
             schema:
-              type: object
-              description: 请求体将直接转发到Creatomate API
-            example:
-              output_format: mp4
-              width: 1280
-              height: 720
-              duration: 3
-              elements:
-                - type: text
-                  text: My first video generated with RenderScript!
-                  fill_color: "#ff0000"
-                  width: "50%"
-                  height: "25%"
+              oneOf:
+                - type: object
+                  title: 使用模板
+                  required:
+                    - template_id
+                  properties:
+                    template_id:
+                      type: string
+                      format: uuid
+                      description: 模板 ID（从 /templates 接口获取）
+                      example: "c937d125-b99b-4690-96f0-6aa1f09438c9"
+                    modifications:
+                      type: object
+                      description: 对模板元素的修改（key 为元素名称）
+                      additionalProperties: true
+                      example:
+                        Text-1: "Hello World"
+                        Image-1: "https://example.com/image.jpg"
+                - type: object
+                  title: 自定义渲染
+                  required:
+                    - output_format
+                    - width
+                    - height
+                    - duration
+                    - elements
+                  properties:
+                    output_format:
+                      type: string
+                      enum: [mp4, mov, gif, png, jpg]
+                      description: 输出格式
+                      example: "mp4"
+                    width:
+                      type: integer
+                      description: 视频宽度（像素）
+                      minimum: 1
+                      example: 1280
+                    height:
+                      type: integer
+                      description: 视频高度（像素）
+                      minimum: 1
+                      example: 720
+                    duration:
+                      type: number
+                      description: 视频时长（秒）
+                      minimum: 0.1
+                      example: 3
+                    frame_rate:
+                      type: integer
+                      description: 帧率
+                      default: 30
+                      example: 30
+                    elements:
+                      type: array
+                      description: 视频元素数组
+                      items:
+                        type: object
+                        additionalProperties: true
+            examples:
+              withTemplate:
+                summary: 使用模板创建（推荐）
+                value:
+                  template_id: "c937d125-b99b-4690-96f0-6aa1f09438c9"
+                  modifications:
+                    Text-1: "Hello World"
+                    Text-2: "Welcome to Creatomate"
+                    Image-1: "https://example.com/background.jpg"
+              customRender:
+                summary: 自定义渲染（高级）
+                value:
+                  output_format: "mp4"
+                  width: 1280
+                  height: 720
+                  duration: 3
+                  frame_rate: 30
+                  elements:
+                    - type: "text"
+                      text: "My first video!"
+                      fill_color: "#ff0000"
+                      font_size: "48px"
+                      width: "50%"
+                      height: "25%"
+                      x: "50%"
+                      y: "50%"
       responses:
-        '200':
-          description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
         '201':
-          description: 资源创建成功
+          description: 渲染任务创建成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: 渲染任务 ID
+                        example: "d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
+                      status:
+                        type: string
+                        enum: [pending, processing]
+                        description: 初始状态
+                        example: "pending"
+                      created_at:
+                        type: string
+                        format: date-time
+                      template_id:
+                        type: string
+                        format: uuid
+                        description: 使用的模板 ID（如果有）
         '400':
-          description: 请求错误
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: 服务器错误
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    
-    put:
-      tags:
-        - Proxy
-      summary: Creatomate API代理 - PUT请求
-      description: |
-        将PUT请求转发到Creatomate API。
-        
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
-      operationId: proxyCreatomatePut
-      security:
-        - BearerAuth: []
-        - ApiKeyAuth: []
-      parameters:
-        - name: path
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    
-    patch:
-      tags:
-        - Proxy
-      summary: Creatomate API代理 - PATCH请求
-      description: |
-        将PATCH请求转发到Creatomate API。
-        
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
-      operationId: proxyCreatomatePatch
-      security:
-        - BearerAuth: []
-        - ApiKeyAuth: []
-      parameters:
-        - name: path
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    
-    delete:
-      tags:
-        - Proxy
-      summary: Creatomate API代理 - DELETE请求
-      description: |
-        将DELETE请求转发到Creatomate API。
-        
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
-      operationId: proxyCreatomateDelete
-      security:
-        - BearerAuth: []
-        - ApiKeyAuth: []
-      parameters:
-        - name: path
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  
-  /proxy/{apiName}/{path}:
-    get:
-      tags:
-        - Proxy
-      summary: 通用API代理 - GET请求
-      description: |
-        将GET请求转发到配置的外部API。
-        需要先在环境变量中配置 `API_{API_NAME}_BASE_URL` 和 `API_{API_NAME}_VERSION`。
-        
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
-      operationId: proxyGenericGet
-      security:
-        - BearerAuth: []
-        - ApiKeyAuth: []
-      parameters:
-        - name: apiName
-          in: path
-          required: true
-          description: API名称（对应环境变量中的配置名称，不区分大小写）
-          schema:
-            type: string
-          example: creatomate
-        - name: path
-          in: path
-          required: true
-          description: API路径（不包含baseUrl和version）
-          schema:
-            type: string
-          example: renders/123
-        - name: page
-          in: query
-          description: 查询参数示例
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: API配置不存在或请求错误
+          description: 请求参数错误
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                default:
+                missingParams:
+                  summary: 缺少必需参数
                   value:
                     success: false
-                    message: "API配置不存在: nonexistent"
+                    message: "Missing required field: template_id or elements"
                     error: {}
         '401':
           description: 鉴权失败
@@ -1009,61 +971,141 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-    
-    post:
+  
+  /creatomate/v1/renders/{renderId}:
+    get:
       tags:
-        - Proxy
-      summary: 通用API代理 - POST请求
+        - Creatomate API
+      summary: 获取指定渲染任务的详细信息
       description: |
-        将POST请求转发到配置的外部API。
-        需要先在环境变量中配置 `API_{API_NAME}_BASE_URL` 和 `API_{API_NAME}_VERSION`。
+        获取指定渲染任务的详细信息，包括状态、进度、结果 URL 等。
         
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
-      operationId: proxyGenericPost
+        **实际转发到**: `GET https://api.creatomate.com/v1/renders/{renderId}`
+        
+        **功能说明**:
+        - 查询渲染任务的实时状态
+        - 获取渲染进度百分比
+        - 获取渲染完成后的视频 URL
+        
+        **状态说明**:
+        - `pending`: 等待处理
+        - `processing`: 正在渲染（可获取进度）
+        - `succeeded`: 渲染成功（可获取视频 URL）
+        - `failed`: 渲染失败（可获取错误信息）
+        
+        **鉴权说明**:
+        - 需要提供本系统的 Bearer Token 或 APIKEY
+        - 本系统会自动使用 `.env` 中配置的 `API_CREATOMATE_TOKEN`
+        
+        **使用场景**:
+        - 轮询查询渲染状态
+        - 获取渲染结果
+        - 错误诊断
+      operationId: getCreatomateRenderById
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
       parameters:
-        - name: apiName
+        - name: renderId
           in: path
           required: true
+          description: 渲染任务 ID（从创建接口返回）
           schema:
             type: string
-          example: creatomate
-        - name: path
-          in: path
-          required: true
-          schema:
-            type: string
-          example: renders
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              description: 请求体将直接转发到外部API
+            format: uuid
+          example: "d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
       responses:
         '200':
-          description: 请求成功
+          description: 成功获取渲染任务详情
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '201':
-          description: 资源创建成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: API配置不存在或请求错误
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum: [pending, processing, succeeded, failed]
+                      progress:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                        description: 渲染进度（百分比）
+                      url:
+                        type: string
+                        format: uri
+                        description: 渲染完成后的视频 URL（status=succeeded 时可用）
+                      error:
+                        type: string
+                        description: 错误信息（status=failed 时可用）
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+              examples:
+                pending:
+                  summary: 等待处理
+                  value:
+                    success: true
+                    data:
+                      id: "d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
+                      status: "pending"
+                      progress: 0
+                      created_at: "2026-01-22T15:00:00Z"
+                processing:
+                  summary: 正在渲染
+                  value:
+                    success: true
+                    data:
+                      id: "d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
+                      status: "processing"
+                      progress: 45
+                      created_at: "2026-01-22T15:00:00Z"
+                      updated_at: "2026-01-22T15:01:30Z"
+                succeeded:
+                  summary: 渲染成功
+                  value:
+                    success: true
+                    data:
+                      id: "d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
+                      status: "succeeded"
+                      progress: 100
+                      url: "https://cdn.creatomate.com/renders/d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e.mp4"
+                      created_at: "2026-01-22T15:00:00Z"
+                      updated_at: "2026-01-22T15:02:45Z"
+                failed:
+                  summary: 渲染失败
+                  value:
+                    success: true
+                    data:
+                      id: "d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
+                      status: "failed"
+                      progress: 0
+                      error: "Invalid template configuration"
+                      created_at: "2026-01-22T15:00:00Z"
+                      updated_at: "2026-01-22T15:00:15Z"
+        '404':
+          description: 渲染任务不存在
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    success: false
+                    message: "Render not found"
+                    error: {}
         '401':
           description: 鉴权失败
           content:
@@ -1076,17 +1118,317 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  
+  /creatomate/{path}:
+    x-summary: Creatomate 通用代理接口
+    x-description: |
+      用于访问未在上方明确定义的 Creatomate API 接口。
+      
+      **已有专用接口，请优先使用**:
+      - `GET /creatomate/v1/templates` - 获取模板列表
+      - `GET /creatomate/v1/renders` - 获取渲染列表
+      - `POST /creatomate/v1/renders` - 创建渲染任务
+      - `GET /creatomate/v1/renders/{renderId}` - 获取渲染详情
+      
+      **通用代理适用场景**:
+      - 访问 Creatomate 的其他 API 端点
+      - 使用新发布的 API 功能
+      - 高级用户自定义请求
+    
+    get:
+      tags:
+        - Creatomate API
+      summary: Creatomate 通用代理 - GET
+      description: |
+        通用代理接口，用于访问任意 Creatomate GET 端点。
+        
+        **实际转发到**: `GET https://api.creatomate.com/{path}`
+        
+        **路径说明**: 版本号需包含在 path 中，如 `v1/templates`。
+        
+        **注意**: 建议优先使用上方定义的专用接口，它们提供了更详细的文档和参数说明。
+      operationId: proxyCreatomateGetGeneric
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: "API 路径（例如: v1/templates/{id}, v1/sources, v1/fonts）"
+          schema:
+            type: string
+          example: "v1/sources"
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          description: 鉴权失败
+        '404':
+          description: 资源不存在
+    
+    post:
+      tags:
+        - Creatomate API
+      summary: Creatomate 通用代理 - POST
+      description: |
+        通用代理接口，用于访问任意 Creatomate POST 端点。
+        
+        **实际转发到**: `POST https://api.creatomate.com/{path}`
+        
+        **路径说明**: 版本号需包含在 path 中，如 `v1/renders`。
+      operationId: proxyCreatomatePostGeneric
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+        '201':
+          description: 资源创建成功
+        '401':
+          description: 鉴权失败
+    
+    put:
+      tags:
+        - Creatomate API
+      summary: Creatomate 通用代理 - PUT
+      description: |
+        通用代理接口，用于访问任意 Creatomate PUT 端点。
+        
+        **实际转发到**: `PUT https://api.creatomate.com/{path}`
+        
+        **路径说明**: 版本号需包含在 path 中。
+      operationId: proxyCreatomatePutGeneric
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+        '401':
+          description: 鉴权失败
+    
+    patch:
+      tags:
+        - Creatomate API
+      summary: Creatomate 通用代理 - PATCH
+      description: |
+        通用代理接口，用于访问任意 Creatomate PATCH 端点。
+        
+        **实际转发到**: `PATCH https://api.creatomate.com/{path}`
+        
+        **路径说明**: 版本号需包含在 path 中。
+      operationId: proxyCreatomatePatchGeneric
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+        '401':
+          description: 鉴权失败
+    
+    delete:
+      tags:
+        - Creatomate API
+      summary: Creatomate 通用代理 - DELETE
+      description: |
+        通用代理接口，用于访问任意 Creatomate DELETE 端点。
+        
+        **实际转发到**: `DELETE https://api.creatomate.com/{path}`
+        
+        **路径说明**: 版本号需包含在 path 中。
+        
+        **使用场景**: 删除渲染任务、模板等资源
+      operationId: proxyCreatomateDeleteGeneric
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: "要删除的资源路径（例如: renders/{id}）"
+          schema:
+            type: string
+          example: "renders/d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e"
+      responses:
+        '200':
+          description: 删除成功
+        '204':
+          description: 删除成功（无返回内容）
+        '401':
+          description: 鉴权失败
+        '404':
+          description: 资源不存在
+  
+  /{apiName}/{path}:
+    x-summary: 其他第三方 API 通用代理
+    x-description: |
+      用于访问其他第三方 API（非 Creatomate）。
+      
+      **已支持的 API**（有专用标签）:
+      - `creatomate` - Creatomate 视频渲染服务（请查看 "Creatomate API" 标签）
+      
+      **配置新的 API**:
+      在 `.env` 文件中添加（版本号直接包含在 BASE_URL 中）：
+      ```env
+      API_{NAME}_BASE_URL=https://api.example.com/v1
+      API_{NAME}_TOKEN=your_token
+      ```
+      
+      **示例**:
+      - Stripe: `/stripe/v1/charges`
+      - SendGrid: `/sendgrid/v3/mail/send`
+    
+    get:
+      tags:
+        - Proxy
+      summary: 通用代理 - GET
+      description: |
+        访问任意已配置的第三方 API 的 GET 端点。
+        
+        **实际转发到**: `GET {API_{NAME}_BASE_URL}/{path}`
+        
+        **路径说明**: 版本号需包含在 path 中，如 `/stripe/v1/charges`
+        
+        **配置要求**（版本号直接包含在 BASE_URL 中）:
+        ```env
+        API_{NAME}_BASE_URL=https://api.example.com/v1
+        API_{NAME}_TOKEN=your_token
+        ```
+      operationId: proxyGenericGet
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          description: API 名称（与 .env 配置对应，不区分大小写）
+          schema:
+            type: string
+          examples:
+            stripe:
+              value: "stripe"
+              summary: Stripe 支付
+            sendgrid:
+              value: "sendgrid"
+              summary: SendGrid 邮件
+        - name: path
+          in: path
+          required: true
+          description: API 路径（需包含版本号）
+          schema:
+            type: string
+          example: "v1/charges/ch_xxxxx"
+      responses:
+        '200':
+          description: 请求成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: API 配置不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                configNotFound:
+                  value:
+                    success: false
+                    message: "API配置不存在: myapi"
+                    error: {}
+        '401':
+          description: 鉴权失败
+        '500':
+          description: 服务器错误
+    
+    post:
+      tags:
+        - Proxy
+      summary: 通用代理 - POST
+      description: 访问任意已配置的第三方 API 的 POST 端点。
+      operationId: proxyGenericPost
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: apiName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 请求成功
+        '201':
+          description: 资源创建成功
+        '400':
+          description: API 配置不存在
+        '401':
+          description: 鉴权失败
     
     put:
       tags:
         - Proxy
-      summary: 通用API代理 - PUT请求
-      description: |
-        将PUT请求转发到配置的外部API。
-        
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      summary: 通用代理 - PUT
+      description: 访问任意已配置的第三方 API 的 PUT 端点。
       operationId: proxyGenericPut
       security:
         - BearerAuth: []
@@ -1110,27 +1452,14 @@ paths:
       responses:
         '200':
           description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
         '401':
           description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     
     patch:
       tags:
         - Proxy
-      summary: 通用API代理 - PATCH请求
-      description: |
-        将PATCH请求转发到配置的外部API。
-        
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      summary: 通用代理 - PATCH
+      description: 访问任意已配置的第三方 API 的 PATCH 端点。
       operationId: proxyGenericPatch
       security:
         - BearerAuth: []
@@ -1154,27 +1483,14 @@ paths:
       responses:
         '200':
           description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
         '401':
           description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     
     delete:
       tags:
         - Proxy
-      summary: 通用API代理 - DELETE请求
-      description: |
-        将DELETE请求转发到配置的外部API。
-        
-        **鉴权方式**：
-        - Bearer Token: `Authorization: Bearer {access_key}` （临时Token）
-        - APIKEY: `X-API-Key: {api_key}` 或查询参数 `?api_key={api_key}` （持久化Key）
+      summary: 通用代理 - DELETE
+      description: 访问任意已配置的第三方 API 的 DELETE 端点。
       operationId: proxyGenericDelete
       security:
         - BearerAuth: []
@@ -1193,16 +1509,10 @@ paths:
       responses:
         '200':
           description: 请求成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
+        '204':
+          description: 删除成功（无返回内容）
         '401':
           description: 鉴权失败
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:

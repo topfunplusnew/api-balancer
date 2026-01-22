@@ -32,21 +32,22 @@ X-API-Key: YOUR_API_KEY_HERE
 
 ### ========================================
 ### Creatomate API 代理接口
+### 路径格式：/creatomate/{version}/{path}
 ### ========================================
 
 ### 获取 Creatomate 模板列表
 # 实际转发到: GET https://api.creatomate.com/v1/templates
-GET http://localhost:25052/api/v1/proxy/creatomate/templates
+GET http://localhost:25052/api/v1/creatomate/v1/templates
 Authorization: Bearer YOUR_ACCESS_KEY_HERE
 
 ### 获取渲染列表（带分页）
 # 实际转发到: GET https://api.creatomate.com/v1/renders
-GET http://localhost:25052/api/v1/proxy/creatomate/renders?page=1&limit=10
+GET http://localhost:25052/api/v1/creatomate/v1/renders?page=1&limit=10
 Authorization: Bearer YOUR_ACCESS_KEY_HERE
 
 ### 创建视频渲染任务（使用模板）
 # 实际转发到: POST https://api.creatomate.com/v1/renders
-POST http://localhost:25052/api/v1/proxy/creatomate/renders
+POST http://localhost:25052/api/v1/creatomate/v1/renders
 Authorization: Bearer YOUR_ACCESS_KEY_HERE
 Content-Type: application/json
 
@@ -59,7 +60,7 @@ Content-Type: application/json
 
 ### 创建视频渲染任务（自定义渲染）
 # 实际转发到: POST https://api.creatomate.com/v1/renders
-POST http://localhost:25052/api/v1/proxy/creatomate/renders
+POST http://localhost:25052/api/v1/creatomate/v1/renders
 Authorization: Bearer YOUR_ACCESS_KEY_HERE
 Content-Type: application/json
 
@@ -82,5 +83,5 @@ Content-Type: application/json
 ### 获取指定渲染任务详情
 # 实际转发到: GET https://api.creatomate.com/v1/renders/{renderId}
 # 请将 {renderId} 替换为实际的渲染任务 ID
-GET http://localhost:25052/api/v1/proxy/creatomate/renders/d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e
+GET http://localhost:25052/api/v1/creatomate/v1/renders/d8e2f891-3c4a-4b5c-8d7e-1f2a3b4c5d6e
 Authorization: Bearer YOUR_ACCESS_KEY_HERE
