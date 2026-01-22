@@ -1,0 +1,322 @@
+---
+alwaysApply: true
+---
+
+
+# Next.js + Express（JavaScript）代码编写规范
+
+## 一、核心原则（JS 项目尤其重要）
+
+### 1️⃣ 结构 > 语言
+
+* **目录结构清晰** 比 TS 更重要
+* **职责分层严格**，避免“一个文件写到死”
+
+### 2️⃣ 用「约定」弥补类型缺失
+
+* JSDoc
+* 统一返回结构
+* 统一校验层
+* 禁止隐式行为
+
+---
+
+## 二、推荐项目结构（JS 版）
+
+```
+app/
+├── web/                     # Next.js
+│   ├── app/
+│   │   ├── page.js
+│   │   └── api/
+│   ├── components/
+│   ├── services/            # BFF 层
+│   ├── hooks/
+│   ├── utils/
+│   ├── constants/
+│   └── middleware.js
+│
+├── api/                  # Express
+│   ├── src/
+│   │   ├── app.js
+│   │   ├── server.js
+│   │   ├── routes/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── middlewares/
+│   │   ├── validators/
+│   │   ├── models/
+│   │   └── utils/
+│   └── tests/
+│
+├── shared/
+│   ├── constants.js
+│   └── enums.js
+│
+├── .eslintrc.cjs
+├── .prettierrc
+└── package.json
+```
+
+---
+
+## 三、命名规范（JS 项目更要严格）
+
+### 3️⃣ 文件 / 目录
+
+| 类型         | 规范                  | 示例                   |
+| ---------- | ------------------- | -------------------- |
+| 目录         | kebab-case          | `user-profile/`      |
+| React 组件   | PascalCase          | `UserCard.jsx`       |
+| hooks      | useXxx              | `useAuth.js`         |
+| service    | camelCase           | `user.service.js`    |
+| route      | resource.routes     | `user.routes.js`     |
+| controller | resource.controller | `user.controller.js` |
+
+---
+
+## 四、Next.js 编写规范（JS）
+
+### 4️⃣ 页面层（app/）
+
+```js
+// app/user/page.js
+import { getUsers } from '@/services/user.service'
+
+export default async function UserPage() {
+  const users = await getUsers()
+  return <UserList users={users} />
+}
+```
+
+**规范**
+
+* 页面只做数据组织 + 组件拼装
+* ❌ 不写 fetch URL
+* ❌ 不写业务逻辑
+
+---
+
+### 5️⃣ BFF（服务调用层）
+
+```js
+// services/user.service.js
+import { apiClient } from '@/utils/apiClient'
+
+export async function getUsers() {
+  return apiClient.get('/users')
+}
+```
+
+**规范**
+
+* 所有接口请求必须通过 service
+* 集中处理错误
+
+---
+
+### 6️⃣ Client / Server Component 规则
+
+```js
+'use client'
+```
+
+**规范**
+
+* 默认 Server Component
+* 只有用到：
+
+  * useState / useEffect
+  * DOM / window
+  * 事件
+    才加 `'use client'`
+
+---
+
+## 五、Express 编写规范（JS）
+
+### 7️⃣ Routes（只做映射）
+
+```js
+// routes/user.routes.js
+router.get('/', userController.list)
+router.post('/', validate(createUserSchema), userController.create)
+```
+
+❌ 路由里写逻辑
+❌ 路由里访问 DB
+
+---
+
+### 8️⃣ Controller（请求/响应）
+
+```js
+// controllers/user.controller.js
+export async function list(req, res, next) {
+  try {
+    const users = await userService.getUsers()
+    res.success(users)
+  } catch (e) {
+    next(e)
+  }
+}
+```
+
+**规范**
+
+* 只处理参数
+* 统一 try/catch → next
+
+---
+
+### 9️⃣ Service（业务核心）
+
+```js
+// services/user.service.js
+export async function getUsers() {
+  return userModel.findAll()
+}
+```
+
+**规范**
+
+* 所有业务逻辑在这里
+* 可复用 / 可测试
+
+---
+
+## 六、参数校验（JS 项目必备）
+
+```js
+// validators/user.schema.js
+import Joi from 'joi'
+
+export const createUserSchema = Joi.object({
+  name: Joi.string().required(),
+  age: Joi.number().min(0)
+})
+```
+
+```js
+router.post('/', validate(createUserSchema), controller.create)
+```
+
+> **JS 没类型，校验层 = 生命线**
+
+---
+
+## 七、统一返回 & 错误规范
+
+### 🔟 返回结构
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {}
+}
+```
+
+```js
+res.success = (data) => {
+  res.json({ code: 0, message: 'ok', data })
+}
+```
+
+---
+
+### 1️⃣1️⃣ 错误处理
+
+```js
+app.use((err, req, res, next) => {
+  console.error(err)
+  res.status(500).json({
+    code: 500,
+    message: err.message || 'Server Error'
+  })
+})
+```
+
+---
+
+## 八、JSDoc（强烈推荐）
+
+```js
+/**
+ * 获取用户列表
+ * @param {Object} options
+ * @returns {Promise<Array<User>>}
+ */
+export async function getUsers(options) {}
+```
+
+**规范**
+
+* service / utils 必须写
+* controller 可选
+
+---
+
+## 九、ESLint（JS 项目一定要上）
+
+### 推荐关键规则
+
+```js
+rules: {
+  'no-unused-vars': 'error',
+  'no-implicit-globals': 'error',
+  'eqeqeq': 'error',
+  'no-console': ['warn', { allow: ['warn', 'error'] }]
+}
+```
+
+---
+
+## 十、环境变量规范
+
+```env
+# Next
+NEXT_PUBLIC_API_BASE_URL=
+
+# Express
+DB_URL=
+JWT_SECRET=
+```
+
+**规则**
+
+* 不跨端
+* 不直接写死在代码
+
+---
+
+## 十一、JS 项目常见雷区
+
+❌ controller 直接操作数据库
+❌ React 组件里写复杂业务
+❌ 任意 return 不统一结构
+❌ 不校验参数
+❌ utils 变“垃圾桶文件”
+
+---
+
+## 十二、给你的现实建议（非常重要）
+
+> **JS + Next + Express**
+> 想长期维护，必须至少做到三件事：
+
+1. **JSDoc + 校验层**
+2. **Service / Controller / Route 严格分层**
+3. **统一错误 & 返回格式**
+
+你这个技术栈 **完全适合 BFF + 后端解耦**，以后即使你要迁 TS，也是**平滑升级**。
+
+---
+
+如果你愿意，我可以：
+
+* 🔹 给你一套 **JS 版可直接用的模板**
+* 🔹 帮你把你现在的目录「对照重构一版规范」
+* 🔹 给你一份 **ESLint 配置 + 提交规范**
+
+你更想要哪一个？

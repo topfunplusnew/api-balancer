@@ -10,14 +10,32 @@ class TemplateConfigController {
    * @route GET /api/v1/template-config
    */
   static async getTemplateConfig(req, res) {
-    const config = TemplateConfigService.getTemplateConfig();
-    
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      message: "获取模板配置成功",
-      data: config,
-      error: {},
-    });
+    const templateId = req.query?.template_id;
+
+    return !templateId
+      ? res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: "缺少参数: template_id",
+          data: {},
+          error: {},
+        })
+      : TemplateConfigService.getTemplateConfig(templateId)
+          .then((modifications) =>
+            res.status(StatusCodes.OK).json({
+              success: true,
+              message: "获取模板配置成功",
+              data: modifications,
+              error: {},
+            })
+          )
+          .catch((error) =>
+            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+              success: false,
+              message: error.message || "获取模板配置失败",
+              data: {},
+              error: error.data || {},
+            })
+          );
   }
 }
 
