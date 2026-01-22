@@ -1,8 +1,10 @@
 const express = require("express");
-const { InfoController, ProxyController, AuthController, ApiKeyController, SupabaseAdminController, } = require("../../controllers");
+const { InfoController, ProxyController, AuthController, ApiKeyController, SupabaseAdminController, TemplateConfigController, } = require("../../controllers");
 const { authMiddleware } = require("../../middlewares");
 const router = express.Router();
 router.get("/info", InfoController.info);
+// 模板配置路由（不需要鉴权）
+router.get("/template-config", TemplateConfigController.getTemplateConfig);
 // 鉴权相关路由（不需要鉴权）
 router.post("/auth/api-key", AuthController.getApiKey);
 router.post("/auth/api-key-order", AuthController.getApiKeyWithOrderAuth);

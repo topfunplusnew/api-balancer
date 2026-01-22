@@ -1,0 +1,90 @@
+paths:
+  /api/v1/template-config:
+    get:
+      tags:
+        - Template Config
+      summary: 获取模板配置
+      description: 返回固定的模板配置结构，用于表单渲染
+      responses:
+        '200':
+          description: 获取模板配置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "获取模板配置成功"
+                  data:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "template_id"
+                        description: 字段名称
+                      type:
+                        type: string
+                        example: "select"
+                        description: 字段类型
+                      label:
+                        type: string
+                        example: "草稿ID"
+                        description: 字段标签
+                      options:
+                        type: object
+                        properties:
+                          store:
+                            type: string
+                            example: "rpc://getTemplates"
+                            description: 数据源
+                          nested:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "json"
+                                type:
+                                  type: string
+                                  example: "text"
+                                label:
+                                  type: string
+                                  example: "知识库文件ID"
+                                required:
+                                  type: boolean
+                                  example: true
+                                help:
+                                  type: string
+                                  example: "JSON"
+                      required:
+                        type: boolean
+                        example: true
+                        description: 是否必填
+                      help:
+                        type: string
+                        example: "获取草稿信息"
+                        description: 帮助信息
+                  error:
+                    type: object
+                    example: {}
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "服务器内部错误"
+                  error:
+                    type: object
+

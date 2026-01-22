@@ -1,88 +1,35 @@
 ### 健康检查
-GET http://localhost:5000/api/v1/info
+GET http://localhost:25052/api/v1/info
 
-### 获取API Key（不需要鉴权）
-POST http://localhost:5000/api/v1/auth/api-key
+### 获取模板配置
+GET http://localhost:25052/api/v1/template-config
+
+### 获取临时 Token
+POST http://localhost:25052/api/v1/auth/api-key
 Content-Type: application/json
 
 {
   "username": "admin",
-  "password": "your_password"
+  "password": "admin123"
 }
 
-### 获取API Key后的响应示例
-# {
-#   "success": true,
-#   "data": {
-#     "access_key": "returned_access_key",
-#     "secret_key": "returned_secret_key",
-#     "message": "API key已生成，请使用access_key作为Bearer token进行鉴权"
-#   }
-# }
+### 使用 Bearer Token 访问受保护的接口
+GET http://localhost:25052/api/v1/api-keys
+Authorization: Bearer YOUR_ACCESS_KEY_HERE
 
-### Creatomate API转发 - 获取renders列表
-GET http://localhost:5000/api/v1/proxy/creatomate/v2/renders
-Authorization: Bearer YOUR_API_KEY
-
-### Creatomate API转发 - 创建render
-POST http://localhost:5000/api/v1/proxy/creatomate/v2/renders
-Authorization: Bearer YOUR_API_KEY
+### 创建持久化 APIKEY
+POST http://localhost:25052/api/v1/api-keys
+Authorization: Bearer YOUR_ACCESS_KEY_HERE
 Content-Type: application/json
 
 {
-  "template_id": "your-template-id",
-  "modifications": {
-    "Text": "Hello World"
-  }
+  "name": "My API Key"
 }
 
-### Creatomate API转发 - 获取模板列表
-GET http://localhost:5000/api/v1/proxy/creatomate/v1/templates
-Authorization: Bearer YOUR_API_KEY
+### 使用 APIKEY 访问受保护的接口
+GET http://localhost:25052/api/v1/api-keys
+X-API-Key: YOUR_API_KEY_HERE
 
-### Creatomate API转发 - 获取单个模板详情（含RenderScript源码）
-GET http://localhost:5000/api/v1/proxy/creatomate/v1/templates/YOUR_TEMPLATE_ID
-Authorization: Bearer YOUR_API_KEY
-
-### 通用API转发示例（动态API名称）
-GET http://localhost:5000/api/v1/proxy/creatomate/v2/renders
-Authorization: Bearer YOUR_API_KEY
-
-### Creatomate API转发 - 创建视频渲染（RenderScript方式）
-POST http://localhost:5000/api/v1/proxy/creatomate/v2/renders
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-
-{
-  "output_format": "mp4",
-  "width": 1280,
-  "height": 720,
-  "duration": 3,
-  "elements": [
-    {
-      "type": "text",
-      "text": "My first video generated with RenderScript!",
-      "fill_color": "#ff0000",
-      "width": "50%",
-      "height": "25%"
-    }
-  ]
-}
-
-### Creatomate API转发 - 基于模板创建渲染（完整参数示例）
-POST http://localhost:5000/api/v1/proxy/creatomate/v2/renders
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-
-{
-  "template_id": "YOUR_TEMPLATE_ID_HERE",
-  "modifications": {
-    "Text-1": "This text is placed in the element Text-1",
-    "Video-1": "https://cdn.creatomate.com/demo/video1.mp4"
-  },
-  "render_scale": 0.75,
-  "max_width": 1080,
-  "max_height": 1080,
-  "webhook_url": "https://example.com/webhook",
-  "metadata": "Any text value"
-}
+### Creatomate API 代理示例
+GET http://localhost:25052/api/v1/proxy/creatomate/renders?page=1&limit=10
+Authorization: Bearer YOUR_ACCESS_KEY_HERE
